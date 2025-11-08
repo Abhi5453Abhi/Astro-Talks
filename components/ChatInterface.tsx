@@ -29,7 +29,7 @@ export default function ChatInterface() {
   const [isTyping, setIsTyping] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [showCashbackOffer, setShowCashbackOffer] = useState(false)
-  const [timeRemaining, setTimeRemaining] = useState(120) // 2 minutes in seconds
+  const [timeRemaining, setTimeRemaining] = useState(35) // 35 seconds for local dev
   
   // Minimum balance required: 10 minutes at ₹20/min = ₹200
   const MINIMUM_BALANCE = 200
@@ -107,7 +107,7 @@ export default function ChatInterface() {
 
     const interval = setInterval(() => {
       const elapsed = Math.floor((Date.now() - freeChatStartTime) / 1000)
-      const remaining = Math.max(0, 120 - elapsed) // 2 minutes = 120 seconds
+      const remaining = Math.max(0, 35 - elapsed) // 35 seconds for local dev
       
       setTimeRemaining(remaining)
       
@@ -535,15 +535,6 @@ export default function ChatInterface() {
                 <span>⏱️</span>
                 <span className="tabular-nums">{formatTime(timeRemaining)}</span>
               </motion.div>
-            )}
-            
-            {!isPaidUser && (
-              <button
-                onClick={() => setShowPaymentModal(true)}
-                className="px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-gray-900 rounded-lg text-sm font-semibold transition-all transform hover:scale-105 shadow-lg"
-              >
-                ✨ Unlock Deeper Insights
-              </button>
             )}
           </div>
         </div>
