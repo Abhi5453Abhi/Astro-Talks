@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { publicEnv } from '@/lib/env'
 
 interface PaymentCheckoutProps {
   isOpen: boolean
@@ -9,6 +10,13 @@ interface PaymentCheckoutProps {
   extraPercent: number
   onClose: () => void
   onPaymentSuccess: () => void
+}
+
+// Extend Window interface to include Razorpay
+declare global {
+  interface Window {
+    Razorpay: any
+  }
 }
 
 export default function PaymentCheckout({ 
@@ -26,15 +34,97 @@ export default function PaymentCheckout({
   const totalAmount = amount + gstAmount
   const extraAmount = (amount * extraPercent) / 100
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
+    if (!selectedPaymentMethod) {
+      alert('Please select a payment method')
+      return
+    }
+
     setIsProcessing(true)
-    
-    // Simulate payment processing
-    setTimeout(() => {
+
+    try {
+      // Create Razorpay order
+      const orderResponse = await fetch('/api/razorpay/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: totalAmount,
+          currency: 'INR',
+          receipt: `receipt_${Date.now()}`,
+        }),
+      })
+
+      const orderData = await orderResponse.json()
+
+      if (!orderResponse.ok) {
+        throw new Error(orderData.error || 'Failed to create order')
+      }
+
+      // Initialize Razorpay payment
+      const options = {
+        key: publicEnv.razorpayKeyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Astro Talks',
+        description: `Wallet Recharge ₹${amount}`,
+        order_id: orderData.orderId,
+        handler: async function (response: any) {
+          try {
+            // Verify payment
+            const verifyResponse = await fetch('/api/razorpay/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            })
+
+            const verifyData = await verifyResponse.json()
+
+            if (verifyResponse.ok && verifyData.success) {
+              alert('Payment successful! ✅')
+              onPaymentSuccess()
+              onClose()
+            } else {
+              throw new Error('Payment verification failed')
+            }
+          } catch (error) {
+            console.error('Payment verification error:', error)
+            alert('Payment verification failed. Please contact support.')
+          } finally {
+            setIsProcessing(false)
+          }
+        },
+        prefill: {
+          name: '',
+          email: '',
+          contact: '',
+        },
+        notes: {
+          recharge_amount: amount,
+          extra_amount: extraAmount,
+          total_wallet_credit: amount + extraAmount,
+        },
+        theme: {
+          color: '#F59E0B',
+        },
+        modal: {
+          ondismiss: function () {
+            setIsProcessing(false)
+            alert('Payment cancelled')
+          },
+        },
+      }
+
+      const razorpay = new window.Razorpay(options)
+      razorpay.open()
+    } catch (error) {
+      console.error('Payment error:', error)
+      alert('Failed to initiate payment. Please try again.')
       setIsProcessing(false)
-      onPaymentSuccess()
-      onClose()
-    }, 2000)
+    }
   }
 
   return (

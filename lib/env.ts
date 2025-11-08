@@ -22,7 +22,7 @@ export const RAZORPAY_KEY_ID = getEnv('RAZORPAY_KEY_ID')
 export const RAZORPAY_KEY_SECRET = getEnv('RAZORPAY_KEY_SECRET')
 
 export const publicEnv = {
-  razorpayKeyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+  razorpayKeyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || RAZORPAY_KEY_ID,
 }
 
 
