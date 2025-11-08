@@ -1,5 +1,7 @@
 import OpenAI from 'openai'
-import { OPENAI_API_KEY } from './env'
+import { getServerEnv } from './env'
+
+const { OPENAI_API_KEY } = getServerEnv()
 
 const openai = new OpenAI({
   apiKey: OPENAI_API_KEY,

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { OPENAI_API_KEY } from '@/lib/env'
+import { getServerEnv } from '@/lib/env'
+
+const { OPENAI_API_KEY } = getServerEnv()
 
 const openai = new OpenAI({
   apiKey: OPENAI_API_KEY,

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Razorpay from 'razorpay'
-import { RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET } from '@/lib/env'
+import { getServerEnv } from '@/lib/env'
+
+const { RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET } = getServerEnv()
 
 const razorpay = new Razorpay({
   key_id: RAZORPAY_KEY_ID!,
