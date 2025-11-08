@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '@/lib/store'
 import Message from './Message'
 import TypingIndicator from './TypingIndicator'
 import PaymentModal from './PaymentModal'
-import ContinueChatCard from './ContinueChatCard'
+import CashbackOfferModal from './CashbackOfferModal'
+import InlineChatRechargePrompt from './InlineChatRechargePrompt'
+import ContinueChatBanner from './ContinueChatBanner'
 
 export default function ChatInterface() {
   const { 
@@ -21,15 +23,23 @@ export default function ChatInterface() {
     freeChatExpired,
     setFreeChatActive,
     setFreeChatExpired,
-    setCurrentScreen
+    setCurrentScreen,
+    walletBalance
   } = useStore()
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [showCashbackOffer, setShowCashbackOffer] = useState(false)
+  const [showContinueBanner, setShowContinueBanner] = useState(false)
+  const [showInlineRecharge, setShowInlineRecharge] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState(120) // 2 minutes in seconds
   
-  // Use persistent state from store for showing continue card
-  const showContinueCard = freeChatExpired && !isPaidUser
+  // Minimum balance required: 10 minutes at ₹20/min = ₹200
+  const MINIMUM_BALANCE = 200
+  const hasInsufficientBalance = walletBalance < MINIMUM_BALANCE && !freeChatActive && !isPaidUser
+  
+  // Check if chat is blocked (free chat expired or insufficient balance)
+  const isChatBlocked = (freeChatExpired && !isPaidUser) || hasInsufficientBalance
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const hasGreetedRef = useRef(false)
   const followUpTimeoutsRef = useRef<NodeJS.Timeout[]>([])
@@ -113,6 +123,7 @@ export default function ChatInterface() {
         console.log('⏰ Free chat time expired!')
         setFreeChatActive(false)
         setFreeChatExpired(true)
+        setShowCashbackOffer(true) // Show cashback offer modal immediately (once)
         clearInterval(interval)
       }
     }, 1000)
@@ -227,6 +238,17 @@ export default function ChatInterface() {
     }
   }, [freeChatActive])
 
+  // Check balance when entering chat interface
+  useEffect(() => {
+    // Only check if not in active free chat and not a paid user
+    if (!freeChatActive && !isPaidUser && messages.length > 0) {
+      if (walletBalance < MINIMUM_BALANCE) {
+        console.log('⚠️ Insufficient balance detected')
+        // Banner will show automatically because isChatBlocked is true
+      }
+    }
+  }, [freeChatActive, isPaidUser, walletBalance, messages.length])
+
   // Initial greeting - only if no messages exist and not in free chat mode
   useEffect(() => {
     console.log('Greeting check:', { hasGreeted: hasGreetedRef.current, userProfile: !!userProfile, messagesLength: messages.length, freeChatActive })
@@ -317,7 +339,7 @@ export default function ChatInterface() {
   }
 
   const sendMessage = async () => {
-    if (!input.trim() || isTyping || showContinueCard) return
+    if (!input.trim() || isTyping || isChatBlocked) return
 
     // Clear follow-ups when user sends a message and mark that user has replied
     if (freeChatActive) {
@@ -428,22 +450,36 @@ export default function ChatInterface() {
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
-  const handleContinueChat = () => {
-    console.log('💬 Continue chat clicked')
-    // Don't hide the card, just show payment modal
-    setShowPaymentModal(true)
+  const handleContinueChatClick = () => {
+    console.log('💬 Continue chat banner clicked')
+    setShowInlineRecharge(true) // Show inline recharge prompt
   }
 
   const handleRecharge = () => {
-    console.log('💳 Recharge clicked')
-    // Don't hide the card, just show payment modal
-    setShowPaymentModal(true)
+    console.log('💳 Recharge clicked from cashback offer')
+    setShowCashbackOffer(false)
+    setShowPaymentModal(true) // Open payment modal directly
+  }
+
+  const handleCashbackClose = () => {
+    console.log('❌ Cashback offer closed')
+    setShowCashbackOffer(false)
+    // Banner will show automatically because isChatBlocked is true
+  }
+
+  const handleInlineRecharge = (selectedAmounts: number[]) => {
+    console.log('💳 Inline recharge clicked with amounts:', selectedAmounts)
+    setShowInlineRecharge(false)
+    setShowPaymentModal(true) // Open payment modal
   }
 
   const handlePaymentSuccess = () => {
-    console.log('✅ Payment successful, hiding continue card')
+    console.log('✅ Payment successful')
     setFreeChatExpired(false)
     setShowPaymentModal(false)
+    setShowCashbackOffer(false)
+    setShowInlineRecharge(false)
+    // Banner will hide automatically because isChatBlocked becomes false
   }
 
   return (
@@ -479,6 +515,22 @@ export default function ChatInterface() {
           </div>
           
           <div className="flex items-center gap-3">
+            {/* Wallet Balance */}
+            {!freeChatActive && !isPaidUser && (
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold ${
+                  walletBalance < MINIMUM_BALANCE
+                    ? 'bg-red-100 text-red-700 border border-red-300'
+                    : 'bg-green-100 text-green-700 border border-green-300'
+                }`}
+              >
+                <span>💰</span>
+                <span className="tabular-nums">₹{walletBalance}</span>
+              </motion.div>
+            )}
+            
             {/* Free Chat Timer */}
             {freeChatActive && !isPaidUser && (
               <motion.div
@@ -514,12 +566,12 @@ export default function ChatInterface() {
             <Message key={message.id} message={message} />
           ))}
           {isTyping && <TypingIndicator />}
-          {showContinueCard && (
-            <ContinueChatCard 
-              onContinue={handleContinueChat}
-              onRecharge={handleRecharge}
-            />
+          
+          {/* Show inline recharge prompt only when explicitly shown */}
+          {showInlineRecharge && (
+            <InlineChatRechargePrompt onProceedToPay={handleInlineRecharge} />
           )}
+          
           <div ref={messagesEndRef} />
         </div>
       </div>
@@ -535,15 +587,15 @@ export default function ChatInterface() {
             value={input}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            placeholder={showContinueCard ? "Recharge to continue chatting..." : "Ask Astrologer anything..."}
+            placeholder={isChatBlocked ? "Recharge to continue chatting..." : "Ask Astrologer anything..."}
             rows={1}
-            disabled={showContinueCard}
+            disabled={isChatBlocked}
             className="flex-1 px-6 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all resize-none disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ minHeight: '60px', maxHeight: '120px' }}
           />
           <button
             onClick={sendMessage}
-            disabled={!input.trim() || isTyping || showContinueCard}
+            disabled={!input.trim() || isTyping || isChatBlocked}
             className="px-8 py-4 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-gray-900 rounded-2xl font-semibold transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
           >
             Send
@@ -551,13 +603,27 @@ export default function ChatInterface() {
         </div>
       </motion.div>
 
+      {/* Continue Chat Banner */}
+      <AnimatePresence>
+        {isChatBlocked && !showInlineRecharge && userProfile && (
+          <ContinueChatBanner 
+            userName={userProfile.name}
+            onContinueChat={handleContinueChatClick}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Cashback Offer Modal */}
+      <CashbackOfferModal
+        isOpen={showCashbackOffer}
+        onRecharge={handleRecharge}
+        onClose={handleCashbackClose}
+      />
+
       {/* Payment Modal */}
       <PaymentModal
         isOpen={showPaymentModal}
-        onClose={() => {
-          // Only close modal, keep continue card visible until payment is made
-          setShowPaymentModal(false)
-        }}
+        onClose={() => setShowPaymentModal(false)}
         onSuccess={handlePaymentSuccess}
       />
     </div>

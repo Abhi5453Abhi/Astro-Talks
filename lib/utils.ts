@@ -33,3 +33,4 @@ export function getZodiacSign(dateOfBirth: string): string {
   return 'Capricorn'
 }
 
+
