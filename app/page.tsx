@@ -127,7 +127,7 @@ Place of Birth: Not specified`
 
   if (!mounted) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-purple-50">
+      <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-amber-50">
         <div className="text-gray-800 text-xl">Loading...</div>
       </main>
     )

@@ -40,16 +40,16 @@ export default function ContactPage() {
         {contactMethods.map((method) => (
           <article
             key={method.title}
-            className="rounded-2xl bg-slate-900/60 p-6 shadow-lg shadow-purple-900/20 ring-1 ring-purple-500/20 backdrop-blur"
+            className="rounded-2xl bg-slate-900/60 p-6 shadow-lg shadow-amber-900/20 ring-1 ring-amber-500/20 backdrop-blur"
           >
-            <h2 className="text-2xl font-semibold text-purple-200">
+            <h2 className="text-2xl font-semibold text-amber-200">
               {method.title}
             </h2>
             <p className="mt-2 text-lg font-medium text-slate-100">
               {method.link ? (
                 <a
                   href={method.link}
-                  className="underline underline-offset-4 transition hover:text-purple-200"
+                  className="underline underline-offset-4 transition hover:text-amber-200"
                 >
                   {method.detail}
                 </a>
@@ -64,7 +64,7 @@ export default function ContactPage() {
         ))}
       </section>
 
-      <section className="rounded-2xl bg-purple-900/20 p-6 text-sm leading-relaxed text-purple-100 ring-1 ring-purple-500/20">
+      <section className="rounded-2xl bg-amber-900/20 p-6 text-sm leading-relaxed text-amber-100 ring-1 ring-amber-500/20">
         <p>
           For urgent payment disputes, mention your transaction ID in the subject line so we can prioritise the response. 
           We never ask for your card PIN or OTP—please ignore and report any such request.

@@ -13,7 +13,7 @@ export default function ContinueChatBanner({ userName, onContinueChat }: Continu
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 100, opacity: 0 }}
-      className="fixed bottom-0 left-0 right-0 z-30 p-4 bg-gradient-to-br from-slate-50 to-purple-50"
+      className="fixed bottom-0 left-0 right-0 z-30 p-4 bg-gradient-to-br from-slate-50 to-amber-50"
     >
       <div className="max-w-4xl mx-auto">
         <div className="bg-gradient-to-r from-yellow-200 via-yellow-300 to-yellow-400 rounded-2xl p-4 shadow-lg border-2 border-yellow-400">

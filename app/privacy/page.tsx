@@ -50,7 +50,7 @@ export default function PrivacyPolicyPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-10 px-6 py-16 text-slate-100">
       <header className="space-y-4 text-center">
-        <p className="text-sm uppercase tracking-[0.3em] text-purple-300">
+        <p className="text-sm uppercase tracking-[0.3em] text-amber-300">
           Last updated: 8 Nov 2025
         </p>
         <h1 className="text-4xl font-semibold">Privacy Policy</h1>
@@ -62,8 +62,8 @@ export default function PrivacyPolicyPage() {
 
       <section className="space-y-10">
         {sections.map((section) => (
-          <article key={section.title} className="rounded-2xl bg-slate-900/60 p-6 shadow-lg shadow-purple-900/20 ring-1 ring-purple-500/20 backdrop-blur">
-            <h2 className="text-2xl font-semibold text-purple-200">
+          <article key={section.title} className="rounded-2xl bg-slate-900/60 p-6 shadow-lg shadow-amber-900/20 ring-1 ring-amber-500/20 backdrop-blur">
+            <h2 className="text-2xl font-semibold text-amber-200">
               {section.title}
             </h2>
             <ul className="mt-4 space-y-3 text-slate-200">
@@ -77,12 +77,12 @@ export default function PrivacyPolicyPage() {
         ))}
       </section>
 
-      <footer className="rounded-2xl bg-purple-900/20 p-6 text-sm leading-relaxed text-purple-100 ring-1 ring-purple-500/20">
+      <footer className="rounded-2xl bg-amber-900/20 p-6 text-sm leading-relaxed text-amber-100 ring-1 ring-amber-500/20">
         <p>
           For questions or requests related to this Privacy Policy, contact us at{' '}
           <a
             href="mailto:support@astro-talks.app"
-            className="font-medium text-purple-200 underline underline-offset-4"
+            className="font-medium text-amber-200 underline underline-offset-4"
           >
             support@astro-talks.app
           </a>

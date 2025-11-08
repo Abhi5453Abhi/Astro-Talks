@@ -7,7 +7,6 @@ import Message from './Message'
 import TypingIndicator from './TypingIndicator'
 import PaymentModal from './PaymentModal'
 import CashbackOfferModal from './CashbackOfferModal'
-import InlineChatRechargePrompt from './InlineChatRechargePrompt'
 import ContinueChatBanner from './ContinueChatBanner'
 
 export default function ChatInterface() {
@@ -30,8 +29,6 @@ export default function ChatInterface() {
   const [isTyping, setIsTyping] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [showCashbackOffer, setShowCashbackOffer] = useState(false)
-  const [showContinueBanner, setShowContinueBanner] = useState(false)
-  const [showInlineRecharge, setShowInlineRecharge] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState(120) // 2 minutes in seconds
   
   // Minimum balance required: 10 minutes at ₹20/min = ₹200
@@ -452,7 +449,7 @@ export default function ChatInterface() {
 
   const handleContinueChatClick = () => {
     console.log('💬 Continue chat banner clicked')
-    setShowInlineRecharge(true) // Show inline recharge prompt
+    setShowPaymentModal(true) // Open wallet recharge page directly
   }
 
   const handleRecharge = () => {
@@ -467,23 +464,16 @@ export default function ChatInterface() {
     // Banner will show automatically because isChatBlocked is true
   }
 
-  const handleInlineRecharge = (selectedAmounts: number[]) => {
-    console.log('💳 Inline recharge clicked with amounts:', selectedAmounts)
-    setShowInlineRecharge(false)
-    setShowPaymentModal(true) // Open payment modal
-  }
-
   const handlePaymentSuccess = () => {
     console.log('✅ Payment successful')
     setFreeChatExpired(false)
     setShowPaymentModal(false)
     setShowCashbackOffer(false)
-    setShowInlineRecharge(false)
     // Banner will hide automatically because isChatBlocked becomes false
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-purple-50">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-amber-50">
       {/* Header */}
       <motion.header
         initial={{ y: -100 }}
@@ -539,7 +529,7 @@ export default function ChatInterface() {
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold ${
                   timeRemaining <= 30 
                     ? 'bg-red-100 text-red-700 border border-red-300 animate-pulse' 
-                    : 'bg-purple-100 text-purple-700 border border-purple-300'
+                    : 'bg-amber-100 text-amber-700 border border-amber-300'
                 }`}
               >
                 <span>⏱️</span>
@@ -566,12 +556,6 @@ export default function ChatInterface() {
             <Message key={message.id} message={message} />
           ))}
           {isTyping && <TypingIndicator />}
-          
-          {/* Show inline recharge prompt only when explicitly shown */}
-          {showInlineRecharge && (
-            <InlineChatRechargePrompt onProceedToPay={handleInlineRecharge} />
-          )}
-          
           <div ref={messagesEndRef} />
         </div>
       </div>
@@ -605,7 +589,7 @@ export default function ChatInterface() {
 
       {/* Continue Chat Banner */}
       <AnimatePresence>
-        {isChatBlocked && !showInlineRecharge && userProfile && (
+        {isChatBlocked && userProfile && (
           <ContinueChatBanner 
             userName={userProfile.name}
             onContinueChat={handleContinueChatClick}

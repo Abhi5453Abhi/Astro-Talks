@@ -24,7 +24,7 @@ export default function Message({ message }: MessageProps) {
       >
         <div
           onClick={() => setShowTime(!showTime)}
-          className="bg-purple-100 border border-purple-200 text-purple-700 px-4 py-2 rounded-full text-[12px] font-medium cursor-pointer hover:bg-purple-200 transition-all shadow-sm"
+          className="bg-amber-100 border border-amber-200 text-amber-700 px-4 py-2 rounded-full text-[12px] font-medium cursor-pointer hover:bg-amber-200 transition-all shadow-sm"
         >
           {message.content}
           <AnimatePresence>
@@ -33,7 +33,7 @@ export default function Message({ message }: MessageProps) {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="text-[10px] text-purple-600 text-center mt-1"
+                className="text-[10px] text-amber-600 text-center mt-1"
               >
                 {new Date(message.timestamp).toLocaleTimeString([], {
                   hour: '2-digit',

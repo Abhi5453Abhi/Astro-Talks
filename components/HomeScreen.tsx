@@ -75,7 +75,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-amber-50 pb-20">
       {/* Header */}
       <div className="bg-white px-4 py-3 flex items-center justify-between shadow-sm">
         <button className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-2xl">
@@ -85,7 +85,7 @@ export default function HomeScreen() {
         <div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full shadow-sm">
           <span className="text-xl">💰</span>
           <span className="font-bold text-gray-800">₹ {walletBalance}</span>
-          <button className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-bold">
+          <button className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-500 to-yellow-500 flex items-center justify-center text-white text-sm font-bold">
             +
           </button>
         </div>
@@ -103,7 +103,7 @@ export default function HomeScreen() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search"
-            className="w-full px-4 py-3 pl-4 pr-12 bg-white border border-gray-200 rounded-full text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-sm"
+            className="w-full px-4 py-3 pl-4 pr-12 bg-white border border-gray-200 rounded-full text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-300 shadow-sm"
           />
           <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,7 +163,7 @@ export default function HomeScreen() {
       <div className="px-4 py-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-bold text-gray-800">Live Astrologers</h3>
-          <button className="text-sm text-purple-600 font-semibold">View All</button>
+          <button className="text-sm text-amber-600 font-semibold">View All</button>
         </div>
         <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
           {astrologers.map((astrologer) => (
@@ -174,7 +174,7 @@ export default function HomeScreen() {
               className="flex-shrink-0 w-48 bg-white rounded-2xl shadow-lg overflow-hidden"
             >
               <div className="relative">
-                <div className="h-48 bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center text-7xl">
+                <div className="h-48 bg-gradient-to-br from-amber-100 to-yellow-100 flex items-center justify-center text-7xl">
                   {astrologer.image}
                 </div>
                 <div className="absolute bottom-2 left-2 bg-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
@@ -187,7 +187,7 @@ export default function HomeScreen() {
                 <p className="text-xs text-gray-600 mt-1">{astrologer.specialization}</p>
                 <p className="text-xs text-gray-500 mt-1">{astrologer.experience}</p>
                 <div className="mt-2 flex items-center justify-between">
-                  <span className="text-xs text-purple-600 font-semibold">₹{astrologer.pricePerMin}/min</span>
+                  <span className="text-xs text-amber-600 font-semibold">₹{astrologer.pricePerMin}/min</span>
                   <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">Online</span>
                 </div>
               </div>
@@ -200,7 +200,7 @@ export default function HomeScreen() {
       <div className="px-4 py-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-bold text-gray-800">My Sessions</h3>
-          <button className="text-sm text-purple-600 font-semibold">View All</button>
+          <button className="text-sm text-amber-600 font-semibold">View All</button>
         </div>
         <div className="bg-white rounded-2xl shadow-md p-4">
           <div className="text-center py-8 text-gray-400">
@@ -234,7 +234,7 @@ export default function HomeScreen() {
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 shadow-lg">
         <div className="flex items-center justify-around">
-          <button className="flex flex-col items-center gap-1 text-purple-600">
+          <button className="flex flex-col items-center gap-1 text-amber-600">
             <span className="text-2xl">🏠</span>
             <span className="text-xs font-semibold">Home</span>
           </button>
