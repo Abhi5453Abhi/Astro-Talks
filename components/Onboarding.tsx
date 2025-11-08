@@ -320,7 +320,7 @@ export default function Onboarding() {
   ]
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-slate-50 to-purple-50">
+    <div className="flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-slate-50 to-amber-50">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -335,7 +335,7 @@ export default function Onboarding() {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <h1 className="text-3xl md:text-4xl font-bold mb-3 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <h1 className="text-3xl md:text-4xl font-bold mb-3 bg-gradient-to-r from-amber-600 to-yellow-600 bg-clip-text text-transparent">
                 {steps[step].title}
               </h1>
               <p className="text-gray-600 mb-8 text-lg">{steps[step].subtitle}</p>

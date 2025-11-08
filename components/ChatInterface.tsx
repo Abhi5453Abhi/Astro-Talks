@@ -483,7 +483,7 @@ export default function ChatInterface() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-purple-50">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-amber-50">
       {/* Header */}
       <motion.header
         initial={{ y: -100 }}
@@ -539,7 +539,7 @@ export default function ChatInterface() {
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold ${
                   timeRemaining <= 30 
                     ? 'bg-red-100 text-red-700 border border-red-300 animate-pulse' 
-                    : 'bg-purple-100 text-purple-700 border border-purple-300'
+                    : 'bg-amber-100 text-amber-700 border border-amber-300'
                 }`}
               >
                 <span>⏱️</span>

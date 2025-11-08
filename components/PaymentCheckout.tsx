@@ -125,11 +125,11 @@ export default function PaymentCheckout({
                       onClick={() => setSelectedPaymentMethod('phonepe')}
                       className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
                         selectedPaymentMethod === 'phonepe'
-                          ? 'border-purple-500 bg-purple-50'
+                          ? 'border-amber-500 bg-amber-50'
                           : 'border-gray-200 bg-white'
                       }`}
                     >
-                      <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center text-white font-bold">
+                      <div className="w-12 h-12 bg-amber-600 rounded-xl flex items-center justify-center text-white font-bold">
                         Pe
                       </div>
                       <span className="text-xs text-gray-700">PhonePe</span>

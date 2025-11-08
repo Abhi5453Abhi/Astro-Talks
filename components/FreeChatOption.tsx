@@ -9,7 +9,7 @@ interface FreeChatOptionProps {
 
 export default function FreeChatOption({ onStartFreeChat, onSkip }: FreeChatOptionProps) {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-purple-50">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-amber-50">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -34,8 +34,8 @@ export default function FreeChatOption({ onStartFreeChat, onSkip }: FreeChatOpti
           <p className="text-gray-600 text-lg">
             Your cosmic profile is ready
           </p>
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-4">
-            <p className="text-purple-700 text-sm mb-2">
+          <div className="bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-4">
+            <p className="text-amber-700 text-sm mb-2">
               🎁 <span className="font-semibold">Special Offer</span>
             </p>
             <p className="text-gray-900 font-bold text-xl">
