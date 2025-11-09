@@ -8,6 +8,7 @@ import TypingIndicator from './TypingIndicator'
 import PaymentModal from './PaymentModal'
 import CashbackOfferModal from './CashbackOfferModal'
 import ContinueChatBanner from './ContinueChatBanner'
+import VoiceCall from './VideoCall'
 
 export default function ChatInterface() {
   const { 
@@ -29,7 +30,8 @@ export default function ChatInterface() {
   const [isTyping, setIsTyping] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [showCashbackOffer, setShowCashbackOffer] = useState(false)
-  const [timeRemaining, setTimeRemaining] = useState(120) // 2 minutes in seconds
+  const [showVideoCall, setShowVideoCall] = useState(false)
+  const [timeRemaining, setTimeRemaining] = useState(120) // 2 minutes
   
   // Minimum balance required: 10 minutes at ₹20/min = ₹200
   const MINIMUM_BALANCE = 200
@@ -107,7 +109,7 @@ export default function ChatInterface() {
 
     const interval = setInterval(() => {
       const elapsed = Math.floor((Date.now() - freeChatStartTime) / 1000)
-      const remaining = Math.max(0, 120 - elapsed) // 2 minutes = 120 seconds
+      const remaining = Math.max(0, 120 - elapsed) // 2 minutes
       
       setTimeRemaining(remaining)
       
@@ -473,31 +475,48 @@ export default function ChatInterface() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-amber-50">
+    <div className="flex flex-col h-screen bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden">
+      {/* Star background effect */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {Array.from({ length: 30 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full bg-white"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              width: `${Math.random() * 2 + 1}px`,
+              height: `${Math.random() * 2 + 1}px`,
+              opacity: Math.random() * 0.6 + 0.2,
+              animation: `twinkle ${Math.random() * 3 + 2}s infinite`,
+            }}
+          />
+        ))}
+      </div>
       {/* Header */}
       <motion.header
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        className="bg-white border-b border-gray-200 p-4 shadow-sm"
+        className="bg-slate-800/80 backdrop-blur-sm border-b border-slate-700/50 p-4 shadow-sm relative z-10"
       >
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setCurrentScreen('home')}
-              className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-700 transition-all font-bold text-lg"
+              className="w-10 h-10 rounded-full bg-slate-700/50 hover:bg-slate-700/70 flex items-center justify-center text-gray-300 transition-all font-bold text-lg"
             >
               ←
             </button>
             <motion.div
               animate={{ rotate: [0, 360] }}
               transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-              className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-xl shadow-lg"
+              className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500 flex items-center justify-center text-xl shadow-lg"
             >
               ✨
             </motion.div>
             <div>
-              <h1 className="text-xl font-bold text-gray-800">Astrologer</h1>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+              <h1 className="text-xl font-bold text-white">Astrologer</h1>
+              <div className="flex items-center gap-2 text-sm text-gray-300">
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                 <span>Online</span>
               </div>
@@ -529,28 +548,19 @@ export default function ChatInterface() {
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold ${
                   timeRemaining <= 30 
                     ? 'bg-red-100 text-red-700 border border-red-300 animate-pulse' 
-                    : 'bg-amber-100 text-amber-700 border border-amber-300'
+                    : 'bg-yellow-100 text-yellow-700 border border-yellow-300'
                 }`}
               >
                 <span>⏱️</span>
                 <span className="tabular-nums">{formatTime(timeRemaining)}</span>
               </motion.div>
             )}
-            
-            {!isPaidUser && (
-              <button
-                onClick={() => setShowPaymentModal(true)}
-                className="px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-gray-900 rounded-lg text-sm font-semibold transition-all transform hover:scale-105 shadow-lg"
-              >
-                ✨ Unlock Deeper Insights
-              </button>
-            )}
           </div>
         </div>
       </motion.header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 relative z-10">
         <div className="max-w-4xl mx-auto space-y-3 pb-4">
           {messages.map((message) => (
             <Message key={message.id} message={message} />
@@ -564,7 +574,7 @@ export default function ChatInterface() {
       <motion.div
         initial={{ y: 100 }}
         animate={{ y: 0 }}
-        className="bg-white border-t border-gray-200 p-4 shadow-lg"
+        className="bg-slate-800/90 backdrop-blur-sm border-t border-slate-700/50 p-4 shadow-lg relative z-10"
       >
         <div className="max-w-4xl mx-auto flex gap-4">
           <textarea
@@ -574,13 +584,13 @@ export default function ChatInterface() {
             placeholder={isChatBlocked ? "Recharge to continue chatting..." : "Ask Astrologer anything..."}
             rows={1}
             disabled={isChatBlocked}
-            className="flex-1 px-6 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all resize-none disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 px-6 py-4 bg-slate-700/50 border border-slate-600/50 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all resize-none disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ minHeight: '60px', maxHeight: '120px' }}
           />
           <button
             onClick={sendMessage}
             disabled={!input.trim() || isTyping || isChatBlocked}
-            className="px-8 py-4 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-gray-900 rounded-2xl font-semibold transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
+            className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 rounded-2xl font-semibold transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
           >
             Send
           </button>
@@ -609,6 +619,27 @@ export default function ChatInterface() {
         isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
         onSuccess={handlePaymentSuccess}
+      />
+
+      <style jsx>{`
+        @keyframes twinkle {
+          0%, 100% {
+            opacity: 0.2;
+          }
+          50% {
+            opacity: 1;
+          }
+        }
+      `}</style>
+
+      {/* Voice Call */}
+      <VoiceCall
+        isOpen={showVideoCall}
+        onClose={() => {
+          setShowVideoCall(false)
+        }}
+        roomId="astro-call-room"
+        userName={userProfile?.name || 'User'}
       />
     </div>
   )

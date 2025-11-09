@@ -18,7 +18,7 @@ export interface UserProfile {
   zodiacSign?: string
 }
 
-export type Screen = 'home' | 'chat' | 'free-chat-option'
+export type Screen = 'start' | 'onboarding' | 'home' | 'chat' | 'free-chat-option'
 
 interface Store {
   userProfile: UserProfile | null
@@ -59,7 +59,7 @@ export const useStore = create<Store>()(
       freeChatStartTime: null,
       freeChatExpired: false,
       walletBalance: 346,
-      currentScreen: 'home',
+      currentScreen: 'start',
       setUserProfile: (profile) => set((state) => ({ 
         userProfile: profile, 
         // Show free chat option only if not claimed yet
@@ -88,7 +88,7 @@ export const useStore = create<Store>()(
           freeChatStartTime: null,
           freeChatExpired: false,
           walletBalance: 346,
-          currentScreen: 'home',
+          currentScreen: 'start',
         }),
     }),
     {
