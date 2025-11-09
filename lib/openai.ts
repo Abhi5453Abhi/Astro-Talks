@@ -1,10 +1,7 @@
 import OpenAI from 'openai'
-import { getServerEnv } from './env'
-
-const { OPENAI_API_KEY } = getServerEnv()
 
 const openai = new OpenAI({
-  apiKey: OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY,
 })
 
 export async function generateGuruDevResponse(

@@ -6,6 +6,7 @@ import Onboarding from '@/components/Onboarding'
 import ChatInterface from '@/components/ChatInterface'
 import FreeChatOption from '@/components/FreeChatOption'
 import HomeScreen from '@/components/HomeScreen'
+import StartScreen from '@/components/StartScreen'
 import { useStore } from '@/lib/store'
 
 export default function Home() {
@@ -15,6 +16,15 @@ export default function Home() {
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Ensure start screen shows for new users
+  useEffect(() => {
+    // If no user profile exists and we're not already in onboarding or start, go to start
+    if (!userProfile && currentScreen !== 'start' && currentScreen !== 'onboarding') {
+      console.log('🔄 No user profile found, resetting to start screen')
+      setCurrentScreen('start')
+    }
+  }, [userProfile, currentScreen, setCurrentScreen])
 
   // Auto-correct screen if free chat was claimed but screen is still set to free-chat-option
   useEffect(() => {
@@ -135,7 +145,11 @@ Place of Birth: Not specified`
 
   return (
     <main className="min-h-screen">
-      {!userProfile ? (
+      {currentScreen === 'start' ? (
+        <StartScreen />
+      ) : currentScreen === 'onboarding' ? (
+        <Onboarding />
+      ) : !userProfile ? (
         <Onboarding />
       ) : currentScreen === 'home' ? (
         <HomeScreen />
