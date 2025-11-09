@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import AuthProvider from '@/components/providers/AuthProvider'
 
 export const metadata: Metadata = {
   title: 'Astro Talks - Connect with Astrologer',
@@ -29,7 +30,9 @@ export default function RootLayout({
         <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
       </head>
       <body className="bg-gradient-to-br from-slate-900 via-amber-900 to-slate-900 min-h-screen">
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   )

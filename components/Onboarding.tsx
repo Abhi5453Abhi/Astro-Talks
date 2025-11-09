@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useSession } from 'next-auth/react'
 import { useStore } from '@/lib/store'
 import { getZodiacSign } from '@/lib/utils'
 
@@ -27,6 +28,12 @@ export default function Onboarding() {
   const periodRef = useRef<HTMLDivElement>(null)
 
   const { setUserProfile } = useStore()
+  const { data: session } = useSession()
+  useEffect(() => {
+    if (session?.user?.name && !name) {
+      setName(session.user.name)
+    }
+  }, [session?.user?.name, name])
 
   // Debug: Track step changes
   useEffect(() => {

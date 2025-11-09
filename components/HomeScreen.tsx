@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useStore } from '@/lib/store'
+import AuthButton from '@/components/AuthButton'
 
 interface Astrologer {
   id: string
@@ -107,9 +108,13 @@ export default function HomeScreen() {
           </button>
         </div>
 
-        <button className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-          <span className="text-2xl">👤</span>
-        </button>
+        <div className="hidden sm:block">
+          <AuthButton variant="ghost" />
+        </div>
+      </div>
+
+      <div className="px-4 pt-3 sm:hidden relative z-10">
+        <AuthButton variant="primary" />
       </div>
 
       {/* Search Bar */}
