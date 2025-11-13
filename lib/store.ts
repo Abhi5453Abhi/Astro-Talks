@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import type { DailyHoroscopePayload } from '@/types/horoscope'
 
 export interface Message {
   id: string
@@ -16,9 +17,16 @@ export interface UserProfile {
   gender?: string
   languages: ('english' | 'hindi' | 'punjabi')[]
   zodiacSign?: string
+  placeOfBirth?: string
 }
 
-export type Screen = 'start' | 'onboarding' | 'home' | 'chat' | 'free-chat-option'
+export type Screen =
+  | 'start'
+  | 'onboarding'
+  | 'home'
+  | 'chat'
+  | 'free-chat-option'
+  | 'daily-horoscope'
 
 interface Store {
   userProfile: UserProfile | null
@@ -32,6 +40,9 @@ interface Store {
   freeChatExpired: boolean
   walletBalance: number
   currentScreen: Screen
+  dailyHoroscope: DailyHoroscopePayload | null
+  dailyHoroscopeDate: string | null
+  dailyHoroscopeCache: Record<string, DailyHoroscopePayload>
   setUserProfile: (profile: UserProfile) => void
   addMessage: (message: Message) => void
   setFreeReadingUsed: (used: boolean) => void
@@ -43,6 +54,9 @@ interface Store {
   setFreeChatExpired: (expired: boolean) => void
   setWalletBalance: (balance: number) => void
   setCurrentScreen: (screen: Screen) => void
+  setDailyHoroscope: (horoscope: DailyHoroscopePayload | null, date: string | null) => void
+  setDailyHoroscopeForSign: (sign: string, horoscope: DailyHoroscopePayload) => void
+  removeDailyHoroscopeForSign: (sign: string) => void
   reset: () => void
 }
 
@@ -60,6 +74,9 @@ export const useStore = create<Store>()(
       freeChatExpired: false,
       walletBalance: 346,
       currentScreen: 'start',
+      dailyHoroscope: null,
+      dailyHoroscopeDate: null,
+      dailyHoroscopeCache: {},
       setUserProfile: (profile) => set((state) => ({ 
         userProfile: profile, 
         // Show free chat option only if not claimed yet
@@ -76,6 +93,21 @@ export const useStore = create<Store>()(
       setFreeChatExpired: (expired) => set({ freeChatExpired: expired }),
       setWalletBalance: (balance) => set({ walletBalance: balance }),
       setCurrentScreen: (screen) => set({ currentScreen: screen }),
+      setDailyHoroscope: (horoscope, date) =>
+        set({ dailyHoroscope: horoscope, dailyHoroscopeDate: date }),
+      setDailyHoroscopeForSign: (sign, horoscope) =>
+        set((state) => ({
+          dailyHoroscopeCache: {
+            ...state.dailyHoroscopeCache,
+            [sign.toLowerCase()]: horoscope,
+          },
+        })),
+      removeDailyHoroscopeForSign: (sign) =>
+        set((state) => {
+          const updated = { ...state.dailyHoroscopeCache }
+          delete updated[sign.toLowerCase()]
+          return { dailyHoroscopeCache: updated }
+        }),
       reset: () =>
         set({
           userProfile: null,
@@ -89,6 +121,9 @@ export const useStore = create<Store>()(
           freeChatExpired: false,
           walletBalance: 346,
           currentScreen: 'start',
+          dailyHoroscope: null,
+          dailyHoroscopeDate: null,
+          dailyHoroscopeCache: {},
         }),
     }),
     {

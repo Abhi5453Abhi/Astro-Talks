@@ -7,6 +7,7 @@ import ChatInterface from '@/components/ChatInterface'
 import FreeChatOption from '@/components/FreeChatOption'
 import HomeScreen from '@/components/HomeScreen'
 import StartScreen from '@/components/StartScreen'
+import DailyHoroscope from '@/components/DailyHoroscope'
 import { useStore } from '@/lib/store'
 
 export default function Home() {
@@ -153,6 +154,8 @@ Place of Birth: Not specified`
         <Onboarding />
       ) : currentScreen === 'home' ? (
         <HomeScreen />
+      ) : currentScreen === 'daily-horoscope' ? (
+        <DailyHoroscope />
       ) : currentScreen === 'free-chat-option' && !freeChatClaimed ? (
         <FreeChatOption onStartFreeChat={handleStartFreeChat} onSkip={handleSkip} />
       ) : currentScreen === 'free-chat-option' && freeChatClaimed ? (

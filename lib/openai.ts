@@ -1,4 +1,5 @@
 import OpenAI from 'openai'
+import type { DailyHoroscopePayload } from '@/types/horoscope'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -13,6 +14,7 @@ export async function generateGuruDevResponse(
     gender?: string
     languages: ('english' | 'hindi' | 'punjabi')[]
     zodiacSign?: string
+    placeOfBirth?: string
   },
   isPaidUser: boolean,
   freeReadingUsed: boolean,
@@ -65,7 +67,7 @@ Rules:
 
   try {
     const response = await openai.chat.completions.create({
-      model: 'gpt-5',
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: systemPrompt },
         ...messages,
@@ -98,4 +100,135 @@ Rules:
 }
 
 // Moved getZodiacSign to lib/utils.ts to avoid client-side import issues
+
+interface DailyHoroscopeRequest {
+  name: string
+  dateOfBirth: string
+  birthTime?: string
+  placeOfBirth?: string
+  gender?: string
+  zodiacSign: string
+  referenceDate: string
+  language: 'english' | 'hindi' | 'punjabi'
+}
+
+export async function generateDailyHoroscope({
+  name,
+  dateOfBirth,
+  birthTime,
+  placeOfBirth,
+  gender,
+  zodiacSign,
+  referenceDate,
+  language,
+}: DailyHoroscopeRequest): Promise<DailyHoroscopePayload> {
+  const languageDescriptor =
+    language === 'hindi'
+      ? 'Write the horoscope in Hindi (हिंदी) using a warm, poetic tone while keeping the JSON content in UTF-8.'
+      : language === 'punjabi'
+      ? 'Write the horoscope in Punjabi (ਪੰਜਾਬੀ) using a warm, poetic tone while keeping the JSON content in UTF-8.'
+      : 'Write the horoscope in English with a gentle, mystical tone.'
+
+  const systemPrompt = `You are an experienced Vedic astrologer creating personalized horoscopes.
+Return ONLY valid JSON that matches the provided schema.
+All narrative fields must be rich, empathetic, and grounded in astrological reasoning based on zodiac sign, birth details, and the reference date.
+Scores must be integers between 0 and 100.
+Do not include any additional commentary.`
+
+  const userPrompt = `
+Create a personalized daily horoscope for:
+- Name: ${name}
+- Zodiac Sign: ${zodiacSign}
+- Date of Birth: ${dateOfBirth}
+- Time of Birth: ${birthTime ?? 'Not provided'}
+- Place of Birth: ${placeOfBirth ?? 'Not provided'}
+- Gender: ${gender ?? 'Not provided'}
+- Reference Date: ${referenceDate}
+
+${languageDescriptor}
+
+The JSON schema:
+{
+  "zodiacSign": string,
+  "date": string (ISO date),
+  "luckyColors": string[],
+  "moodOfDay": string,
+  "luckyNumber": string,
+  "luckyTime": string,
+  "summary": string,
+  "sections": [
+    {
+      "title": string,
+      "score": number (0-100),
+      "summary": string
+    }
+  ],
+  "insights": {
+    "weekly": {
+      "title": string,
+      "dateRange": string,
+      "overview": string,
+      "sections": [
+        { "title": string, "content": string }
+      ]
+    },
+    "monthly": {
+      "title": string,
+      "dateRange": string,
+      "overview": string,
+      "sections": [
+        { "title": string, "content": string }
+      ]
+    },
+    "yearly": {
+      "title": string,
+      "dateRange": string,
+      "overview": string,
+      "sections": [
+        { "title": string, "content": string }
+      ]
+    }
+  }
+}
+
+Daily sections must cover exactly these areas with personalized language:
+1. Love
+2. Career
+3. Money
+4. Health
+5. Travel
+
+Each insight section (weekly/monthly/yearly) must include at least three themed subsections (e.g., "Health & Wellness", "Emotions & Mind").
+Ensure cultural authenticity and grounded astrological metaphors.
+`
+
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ],
+    max_completion_tokens: 3000,
+    temperature: 0.8,
+    response_format: { type: 'json_object' },
+  })
+
+  const rawContent = response.choices[0].message.content?.trim()
+  if (!rawContent) {
+    throw new Error('Empty horoscope response')
+  }
+
+  const cleaned = rawContent
+    .replace(/^```(?:json)?/i, '')
+    .replace(/```$/, '')
+    .trim()
+
+  try {
+    const parsed = JSON.parse(cleaned) as DailyHoroscopePayload
+    return parsed
+  } catch (error) {
+    console.error('Failed to parse horoscope JSON:', rawContent)
+    throw error
+  }
+}
 

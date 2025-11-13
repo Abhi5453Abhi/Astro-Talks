@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useSession } from 'next-auth/react'
 import { useStore } from '@/lib/store'
 import { getZodiacSign } from '@/lib/utils'
+import { ZODIAC_SIGNS } from '@/types/horoscope'
 
 export default function Onboarding() {
   const [step, setStep] = useState(0)
@@ -27,7 +28,7 @@ export default function Onboarding() {
   const minuteRef = useRef<HTMLDivElement>(null)
   const periodRef = useRef<HTMLDivElement>(null)
 
-  const { setUserProfile } = useStore()
+  const { setUserProfile, setDailyHoroscope, setDailyHoroscopeForSign } = useStore()
   const { data: session } = useSession()
   useEffect(() => {
     if (session?.user?.name && !name) {
@@ -412,14 +413,53 @@ export default function Onboarding() {
     const zodiacSign = getZodiacSign(dateOfBirth)
     console.log('✨ Calculated zodiac sign:', zodiacSign)
 
-    setUserProfile({
+    const profile = {
       name,
       dateOfBirth,
       birthTime: unknownBirthTime ? undefined : birthTime,
       gender,
       languages,
       zodiacSign,
-    })
+    }
+
+    void (async () => {
+      const today = new Date().toISOString().split('T')[0]
+      for (const sign of ZODIAC_SIGNS) {
+        try {
+          const response = await fetch('/api/horoscope/daily', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userProfile: {
+                ...profile,
+                zodiacSign: sign,
+              },
+              referenceDate: today,
+            }),
+          })
+
+          if (!response.ok) {
+            const detail = await response.json().catch(() => ({}))
+            console.error(`⚠️ Failed to fetch ${sign} horoscope:`, detail)
+            continue
+          }
+
+          const data = await response.json()
+          setDailyHoroscopeForSign(sign, data)
+
+          if (sign === profile.zodiacSign) {
+            setDailyHoroscope(data, data.date ?? today)
+            console.log('🌟 Daily horoscope cached successfully')
+          }
+        } catch (error) {
+          console.error(`⚠️ Error fetching ${sign} horoscope:`, error)
+        }
+      }
+    })()
+
+    setUserProfile(profile)
     
     console.log('✅ User profile saved successfully!')
     setIsLoading(false)
