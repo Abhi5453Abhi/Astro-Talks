@@ -235,20 +235,20 @@ export default function HomeScreen() {
 
       {/* Action Buttons */}
       <div className="fixed bottom-16 left-0 right-0 px-4 py-3 bg-slate-800/90 backdrop-blur-sm border-t border-slate-700/50 relative z-20">
-        <div className="flex gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <button
             onClick={handleChatWithAstrologer}
-            className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 rounded-2xl font-bold text-gray-900 transition-all shadow-lg"
+            className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-yellow-400 to-yellow-500 py-3 px-2 text-sm font-bold text-gray-900 transition-all shadow-lg hover:from-yellow-500 hover:to-yellow-600 sm:px-4"
           >
-            <span className="text-xl">💬</span>
-            <span>Chat with Astrologer</span>
+            <span className="text-lg sm:text-xl">💬</span>
+            <span className="whitespace-nowrap">Chat with Astrologer</span>
           </button>
           <button
             onClick={handleCallWithAstrologer}
-            className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 rounded-2xl font-bold text-gray-900 transition-all shadow-lg"
+            className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-yellow-400 to-yellow-500 py-3 px-2 text-sm font-bold text-gray-900 transition-all shadow-lg hover:from-yellow-500 hover:to-yellow-600 sm:px-4"
           >
-            <span className="text-xl">📞</span>
-            <span>Call with Astrologer</span>
+            <span className="text-lg sm:text-xl">📞</span>
+            <span className="whitespace-nowrap">Call with Astrologer</span>
           </button>
         </div>
       </div>
