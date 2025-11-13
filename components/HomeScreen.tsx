@@ -5,56 +5,27 @@ import { motion } from 'framer-motion'
 import { useStore } from '@/lib/store'
 import AuthButton from '@/components/AuthButton'
 
-interface Astrologer {
-  id: string
-  name: string
-  image: string
-  specialization: string
-  rating: number
-  experience: string
-  languages: string[]
-  pricePerMin: number
-}
-
-const astrologers: Astrologer[] = [
-  {
-    id: '1',
-    name: 'AnuNK',
-    image: '👩‍🦱',
-    specialization: 'Vedic, Numerology',
-    rating: 4.9,
-    experience: '12 years',
-    languages: ['Hindi', 'English'],
-    pricePerMin: 20,
-  },
-  {
-    id: '2',
-    name: 'Kimyanka',
-    image: '👩',
-    specialization: 'Tarot, Palmistry',
-    rating: 4.8,
-    experience: '8 years',
-    languages: ['Hindi', 'English', 'Punjabi'],
-    pricePerMin: 18,
-  },
-  {
-    id: '3',
-    name: 'Rajesh Kumar',
-    image: '👨',
-    specialization: 'KP System, Vedic',
-    rating: 4.7,
-    experience: '15 years',
-    languages: ['Hindi', 'English'],
-    pricePerMin: 25,
-  },
-]
-
 export default function HomeScreen() {
-  const { userProfile, walletBalance, freeChatClaimed, setCurrentScreen } = useStore()
+  const {
+    userProfile,
+    walletBalance,
+    freeChatClaimed,
+    currentScreen,
+    setCurrentScreen,
+  } = useStore()
   const [searchQuery, setSearchQuery] = useState('')
 
+  const isHomeContext =
+    currentScreen === 'home' ||
+    (currentScreen === 'free-chat-option' && freeChatClaimed)
+
   const features = [
-    { icon: '🌅', label: 'Daily\nHoroscope', color: 'from-yellow-400 to-yellow-500' },
+    {
+      icon: '🌅',
+      label: 'Daily\nHoroscope',
+      color: 'from-yellow-400 to-yellow-500',
+      action: () => setCurrentScreen('daily-horoscope'),
+    },
     { icon: '📋', label: 'Free\nKundli', color: 'from-yellow-400 to-yellow-500' },
     { icon: '💍', label: 'Kundli\nMatching', color: 'from-yellow-400 to-yellow-500' },
     { icon: '📖', label: 'Astrology\nBlog', color: 'from-yellow-400 to-yellow-500' },
@@ -75,7 +46,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 pb-20 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 pb-40 relative overflow-hidden">
       {/* Star background effect */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {Array.from({ length: 30 }).map((_, i) => (
@@ -141,6 +112,7 @@ export default function HomeScreen() {
           {features.map((feature, index) => (
             <button
               key={index}
+              onClick={feature.action}
               className="flex flex-col items-center gap-2"
             >
               <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${feature.color} flex items-center justify-center text-3xl shadow-lg hover:scale-105 transition-transform`}>
@@ -181,43 +153,6 @@ export default function HomeScreen() {
         </motion.div>
       </div>
 
-      {/* Live Astrologers */}
-      <div className="px-4 py-4 relative z-10">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-bold text-white">Live Astrologers</h3>
-          <button className="text-sm text-yellow-400 font-semibold hover:text-yellow-300">View All</button>
-        </div>
-        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-          {astrologers.map((astrologer) => (
-            <motion.button
-              key={astrologer.id}
-              whileHover={{ scale: 1.05 }}
-              onClick={handleChatWithAstrologer}
-              className="flex-shrink-0 w-48 bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden border border-slate-700/50"
-            >
-              <div className="relative">
-                <div className="h-48 bg-gradient-to-br from-yellow-500/20 to-yellow-600/20 flex items-center justify-center text-7xl">
-                  {astrologer.image}
-                </div>
-                <div className="absolute bottom-2 left-2 bg-slate-800/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-slate-700/50">
-                  <span className="text-yellow-400">⭐</span>
-                  <span className="text-white">{astrologer.rating}</span>
-                </div>
-              </div>
-              <div className="p-3 text-left">
-                <h4 className="font-bold text-white text-sm">{astrologer.name}</h4>
-                <p className="text-xs text-gray-300 mt-1">{astrologer.specialization}</p>
-                <p className="text-xs text-gray-400 mt-1">{astrologer.experience}</p>
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="text-xs text-yellow-400 font-semibold">₹{astrologer.pricePerMin}/min</span>
-                  <span className="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded-full font-semibold border border-green-500/30">Online</span>
-                </div>
-              </div>
-            </motion.button>
-          ))}
-        </div>
-      </div>
-
       {/* My Sessions */}
       <div className="px-4 py-4 relative z-10">
         <div className="flex items-center justify-between mb-3">
@@ -233,51 +168,56 @@ export default function HomeScreen() {
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="fixed bottom-16 left-0 right-0 px-4 py-3 bg-slate-800/90 backdrop-blur-sm border-t border-slate-700/50 relative z-20">
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={handleChatWithAstrologer}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-yellow-400 to-yellow-500 py-3 px-2 text-sm font-bold text-gray-900 transition-all shadow-lg hover:from-yellow-500 hover:to-yellow-600 sm:px-4"
-          >
-            <span className="text-lg sm:text-xl">💬</span>
-            <span className="whitespace-nowrap">Chat with Astrologer</span>
-          </button>
-          <button
-            onClick={handleCallWithAstrologer}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-yellow-400 to-yellow-500 py-3 px-2 text-sm font-bold text-gray-900 transition-all shadow-lg hover:from-yellow-500 hover:to-yellow-600 sm:px-4"
-          >
-            <span className="text-lg sm:text-xl">📞</span>
-            <span className="whitespace-nowrap">Call with Astrologer</span>
-          </button>
-        </div>
-      </div>
+<<<<<<< HEAD
+      {isHomeContext && (
+        <>
+          {/* Action Buttons */}
+          <div className="pointer-events-none fixed bottom-16 left-0 right-0 px-4 py-4 bg-slate-900/70 backdrop-blur-lg border-t border-slate-700/40 z-30">
+            <div className="pointer-events-auto mx-auto grid w-full max-w-lg grid-cols-2 gap-3 sm:gap-4">
+              <button
+                onClick={handleChatWithAstrologer}
+                className="flex w-full items-center justify-center gap-3 rounded-full bg-white text-slate-900 font-semibold tracking-wide py-3 px-4 shadow-[0_6px_18px_rgba(15,23,42,0.24)] transition-all duration-200 hover:shadow-[0_10px_26px_rgba(15,23,42,0.3)] sm:px-6 sm:py-3.5"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-lg text-slate-900">
+                  💬
+                </span>
+                <span className="text-xs text-slate-900 whitespace-nowrap sm:text-sm">Chat with Astrologer</span>
+              </button>
+              <button
+                onClick={handleCallWithAstrologer}
+                className="flex w-full items-center justify-center gap-3 rounded-full bg-white text-slate-900 font-semibold tracking-wide py-3 px-4 shadow-[0_6px_18px_rgba(15,23,42,0.24)] transition-all duration-200 hover:shadow-[0_10px_26px_rgba(15,23,42,0.3)] sm:px-6 sm:py-3.5"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-lg text-slate-900">
+                  📞
+                </span>
+                <span className="text-xs text-slate-900 whitespace-nowrap sm:text-sm">Call with Astrologer</span>
+              </button>
+            </div>
+          </div>
 
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-slate-800/90 backdrop-blur-sm border-t border-slate-700/50 px-4 py-2 shadow-lg relative z-20">
-        <div className="flex items-center justify-around">
-          <button className="flex flex-col items-center gap-1 text-yellow-400">
-            <span className="text-2xl">🏠</span>
-            <span className="text-xs font-semibold">Home</span>
-          </button>
-          <button className="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-300">
-            <span className="text-2xl">💬</span>
-            <span className="text-xs">Chat</span>
-          </button>
-          <button className="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-300">
-            <span className="text-2xl">📺</span>
-            <span className="text-xs">Live</span>
-          </button>
-          <button className="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-300">
-            <span className="text-2xl">📞</span>
-            <span className="text-xs">Call</span>
-          </button>
-          <button className="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-300">
-            <span className="text-2xl">🙏</span>
-            <span className="text-xs">Remedies</span>
-          </button>
-        </div>
-      </div>
+          {/* Bottom Navigation */}
+          <div className="fixed bottom-0 left-0 right-0 bg-slate-800/90 backdrop-blur-sm border-t border-slate-700/50 px-4 py-2 shadow-lg z-20">
+            <div className="flex items-center justify-around">
+              <button className="flex flex-col items-center gap-1 text-yellow-400">
+                <span className="text-2xl">🏠</span>
+                <span className="text-xs font-semibold">Home</span>
+              </button>
+              <button className="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-300">
+                <span className="text-2xl">💬</span>
+                <span className="text-xs">Chat</span>
+              </button>
+              <button className="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-300">
+                <span className="text-2xl">📞</span>
+                <span className="text-xs">Call</span>
+              </button>
+              <button className="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-300">
+                <span className="text-2xl">🙏</span>
+                <span className="text-xs">Remedies</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       <style jsx>{`
         .scrollbar-hide::-webkit-scrollbar {
