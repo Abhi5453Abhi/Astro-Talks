@@ -168,7 +168,6 @@ export default function HomeScreen() {
         </div>
       </div>
 
-<<<<<<< HEAD
       {isHomeContext && (
         <>
           {/* Action Buttons */}
