@@ -35,6 +35,30 @@ export default function Home() {
     }
   }, [freeChatClaimed, currentScreen, setCurrentScreen])
 
+  // Handle payment callback from Cashfree
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const paymentStatus = urlParams.get('payment')
+      const orderId = urlParams.get('order_id')
+      
+      if (paymentStatus && orderId) {
+        // Clean up URL
+        const newUrl = window.location.pathname
+        window.history.replaceState({}, '', newUrl)
+        
+        if (paymentStatus === 'success') {
+          // Payment successful - this will be handled by PaymentModal's onPaymentSuccess
+          // The PaymentCheckout component will detect this and show success modal
+          console.log('✅ Payment successful:', orderId)
+        } else if (paymentStatus === 'failed' || paymentStatus === 'error') {
+          const message = urlParams.get('message') || 'Payment failed'
+          alert(`Payment ${paymentStatus === 'error' ? 'error' : 'failed'}: ${message}`)
+        }
+      }
+    }
+  }, [])
+
   const handleStartFreeChat = async () => {
     console.log('🎁 Starting free chat...')
     setFreeChatClaimed(true) // Mark free chat as claimed

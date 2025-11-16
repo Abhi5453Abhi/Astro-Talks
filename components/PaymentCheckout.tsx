@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import PaymentSuccessModal from './PaymentSuccessModal'
 
@@ -12,10 +12,10 @@ interface PaymentCheckoutProps {
   onPaymentSuccess: () => void
 }
 
-// Extend Window interface to include Razorpay
+// Extend Window interface to include Cashfree
 declare global {
   interface Window {
-    Razorpay: any
+    Cashfree: any
   }
 }
 
@@ -29,12 +29,35 @@ export default function PaymentCheckout({
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('')
   const [isProcessing, setIsProcessing] = useState(false)
   const [showCardForm, setShowCardForm] = useState(false)
-  const [razorpayOrderId, setRazorpayOrderId] = useState<string>('')
+  const [cashfreeOrderId, setCashfreeOrderId] = useState<string>('')
+  const [paymentSessionId, setPaymentSessionId] = useState<string>('')
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [cashfreeLoaded, setCashfreeLoaded] = useState(false)
   const gstPercent = 18.0
   const gstAmount = (amount * gstPercent) / 100
   const totalAmount = amount + gstAmount
   const extraAmount = (amount * extraPercent) / 100
+
+  // Load Cashfree SDK
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !cashfreeLoaded) {
+      const script = document.createElement('script')
+      script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js'
+      script.async = true
+      script.onload = () => {
+        setCashfreeLoaded(true)
+      }
+      document.body.appendChild(script)
+
+      return () => {
+        // Cleanup script on unmount
+        const existingScript = document.querySelector('script[src="https://sdk.cashfree.com/js/v3/cashfree.js"]')
+        if (existingScript) {
+          document.body.removeChild(existingScript)
+        }
+      }
+    }
+  }, [cashfreeLoaded])
 
   const handleSuccess = () => {
     setShowSuccessModal(true)
@@ -47,19 +70,67 @@ export default function PaymentCheckout({
     onClose()
   }
 
-  // Handle UPI payment
-  const handleUpiPayment = async (app: string) => {
-    setIsProcessing(true)
+  // Verify payment after successful checkout
+  const verifyPayment = async (orderId: string) => {
+    try {
+      const verifyResponse = await fetch('/api/cashfree/verify-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: orderId,
+        }),
+      })
+
+      const verifyData = await verifyResponse.json()
+
+      if (verifyResponse.ok && verifyData.success) {
+        handleSuccess()
+      } else {
+        throw new Error(verifyData.error || 'Payment verification failed')
+      }
+    } catch (error: any) {
+      console.error('Payment verification error:', error)
+      setIsProcessing(false)
+      alert('Payment verification failed. Please contact support.')
+    }
+  }
+
+  // Check for payment success callback from Cashfree
+  useEffect(() => {
+    if (typeof window !== 'undefined' && isOpen) {
+      const urlParams = new URLSearchParams(window.location.search)
+      const paymentStatus = urlParams.get('payment')
+      const orderId = urlParams.get('order_id')
+      
+      if (paymentStatus === 'success' && orderId) {
+        // Verify and complete payment
+        verifyPayment(orderId)
+        // Clean up URL
+        const newUrl = window.location.pathname
+        window.history.replaceState({}, '', newUrl)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen])
+
+  // Initialize Cashfree checkout
+  const initializeCashfreeCheckout = async (paymentMethod?: string) => {
+    if (!cashfreeLoaded || !window.Cashfree) {
+      // Wait a bit for SDK to load
+      await new Promise(resolve => setTimeout(resolve, 500))
+      if (!window.Cashfree) {
+        throw new Error('Cashfree SDK not loaded. Please refresh the page.')
+      }
+    }
 
     try {
-      // Step 1: Create Razorpay order
-      const orderResponse = await fetch('/api/razorpay/create-order', {
+      // Step 1: Create Cashfree order
+      const orderResponse = await fetch('/api/cashfree/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: totalAmount,
           currency: 'INR',
-          receipt: `receipt_${Date.now()}`,
         }),
       })
 
@@ -69,237 +140,63 @@ export default function PaymentCheckout({
         throw new Error(orderData.error || 'Failed to create order')
       }
 
-      setRazorpayOrderId(orderData.orderId)
+      setCashfreeOrderId(orderData.orderId)
+      setPaymentSessionId(orderData.paymentSessionId)
 
-      // Step 2: Initialize Razorpay with UPI intent configuration
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: 'Astro Talks',
-        description: `Wallet Recharge ₹${amount}`,
-        order_id: orderData.orderId,
-        handler: async function (response: any) {
-          try {
-            // Verify payment
-            const verifyResponse = await fetch('/api/razorpay/verify-payment', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
-            })
+      // Step 2: Initialize Cashfree Checkout
+      // Determine mode: sandbox mode uses test credentials, production uses live credentials
+      // Cashfree test credentials typically don't start with 'CF' or contain 'test'
+      const isProduction = process.env.NEXT_PUBLIC_CASHFREE_APP_ID && 
+                          !process.env.NEXT_PUBLIC_CASHFREE_APP_ID.includes('test') &&
+                          process.env.NEXT_PUBLIC_CASHFREE_APP_ID.startsWith('CF')
+      
+      const cashfree = window.Cashfree({
+        mode: isProduction ? 'production' : 'sandbox',
+      })
 
-            const verifyData = await verifyResponse.json()
-
-            if (verifyResponse.ok && verifyData.success) {
-              handleSuccess()
-            } else {
-              throw new Error('Payment verification failed')
-            }
-          } catch (error) {
-            console.error('Payment verification error:', error)
-            setIsProcessing(false)
-            // Error handling - could add error toast here
-          }
-        },
-        prefill: {
-          name: '',
-          email: '',
-          contact: '',
-        },
-        notes: {
-          recharge_amount: amount,
-          extra_amount: extraAmount,
-          total_wallet_credit: amount + extraAmount,
-        },
-        theme: {
-          color: '#F59E0B',
-        },
-        modal: {
-          ondismiss: function () {
-            setIsProcessing(false)
-          },
-        },
-        config: {
-          display: {
-            blocks: {
-              banks: {
-                name: 'All payment methods',
-                instruments: [
-                  {
-                    method: 'upi',
-                    flows: ['intent'],
-                    apps: [app]
-                  }
-                ]
-              }
-            },
-            hide: [
-              { method: 'card' },
-              { method: 'netbanking' },
-              { method: 'wallet' }
-            ],
-            sequence: ['block.banks'],
-            preferences: {
-              show_default_blocks: false
-            }
-          }
-        }
+      const checkoutOptions = {
+        paymentSessionId: orderData.paymentSessionId,
+        redirectTarget: '_self',
       }
 
-      const razorpay = new window.Razorpay(options)
+      // Open Cashfree checkout - this will redirect to payment page
+      cashfree.checkout(checkoutOptions)
       
-      razorpay.on('payment.failed', function (response: any) {
-        console.error('Payment failed:', response.error)
-        setIsProcessing(false)
-        // Error handling - could add error toast here
-      })
-      
-      razorpay.open()
+      // Note: After payment, Cashfree will redirect back to the return_url
+      // The payment verification will happen via URL parameters or webhook
     } catch (error: any) {
-      console.error('UPI payment error:', error)
+      console.error('Payment initialization error:', error)
       setIsProcessing(false)
-      // Error handling - could add error toast here
+      alert(error.message || 'Failed to initialize payment. Please try again.')
     }
+  }
+
+  // Handle UPI payment
+  const handleUpiPayment = async (app: string) => {
+    setIsProcessing(true)
+    setSelectedPaymentMethod(app)
+    await initializeCashfreeCheckout('upi')
   }
 
   // Handle card payment click
   const handleCardPaymentClick = async () => {
     setIsProcessing(true)
-
-    try {
-      // Step 1: Create Razorpay order
-      const orderResponse = await fetch('/api/razorpay/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: totalAmount,
-          currency: 'INR',
-          receipt: `receipt_${Date.now()}`,
-        }),
-      })
-
-      const orderData = await orderResponse.json()
-
-      if (!orderResponse.ok) {
-        throw new Error(orderData.error || 'Failed to create order')
-      }
-
-      setRazorpayOrderId(orderData.orderId)
-      setShowCardForm(true)
-      setIsProcessing(false)
-    } catch (error: any) {
-      console.error('Card payment setup error:', error)
-      setIsProcessing(false)
-      // Error handling - could add error toast here
-    }
+    setSelectedPaymentMethod('card')
+    setShowCardForm(true)
+    setIsProcessing(false)
   }
 
-  // Handle card form submission using Razorpay's embedded form
+  // Handle card form submission using Cashfree checkout
   const handleCardFormSubmit = async () => {
-    if (!razorpayOrderId) {
-      // Error handling - could add error toast here
-      return
-    }
-
     setIsProcessing(true)
-
-    try {
-      // Use Razorpay's standard checkout for card payments
-      // This is the easiest and most PCI compliant way
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: Math.round(totalAmount * 100),
-        currency: 'INR',
-        name: 'Astro Talks',
-        description: `Wallet Recharge ₹${amount}`,
-        order_id: razorpayOrderId,
-        handler: async function (response: any) {
-          try {
-            // Verify payment
-            const verifyResponse = await fetch('/api/razorpay/verify-payment', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
-            })
-
-            const verifyData = await verifyResponse.json()
-
-            if (verifyResponse.ok && verifyData.success) {
-              handleSuccess()
-            } else {
-              throw new Error('Payment verification failed')
-            }
-          } catch (error) {
-            console.error('Payment verification error:', error)
-            setIsProcessing(false)
-            // Error handling - could add error toast here
-          }
-        },
-        prefill: {
-          name: '',
-          email: '',
-          contact: '',
-        },
-        notes: {
-          recharge_amount: amount,
-          extra_amount: extraAmount,
-          total_wallet_credit: amount + extraAmount,
-        },
-        theme: {
-          color: '#F59E0B',
-        },
-        modal: {
-          ondismiss: function () {
-            setIsProcessing(false)
-            setShowCardForm(false)
-          },
-        },
-        config: {
-          display: {
-            blocks: {
-              card: {
-                name: 'Pay with Card',
-                instruments: [
-                  { method: 'card' }
-                ]
-              }
-            },
-            sequence: ['block.card'],
-            preferences: {
-              show_default_blocks: false
-            }
-          }
-        }
-      }
-
-      const razorpay = new window.Razorpay(options)
-      
-      razorpay.on('payment.failed', function (response: any) {
-        console.error('Payment failed:', response.error)
-        setIsProcessing(false)
-        // Error handling - could add error toast here
-      })
-      
-      razorpay.open()
-    } catch (error: any) {
-      console.error('Card payment error:', error)
-      setIsProcessing(false)
-      // Error handling - could add error toast here
-    }
+    await initializeCashfreeCheckout('card')
   }
 
   // Handle back from card form
   const handleBackFromCardForm = () => {
     setShowCardForm(false)
-    setRazorpayOrderId('')
+    setCashfreeOrderId('')
+    setPaymentSessionId('')
     setSelectedPaymentMethod('')
   }
 
@@ -384,7 +281,7 @@ export default function PaymentCheckout({
                   <div className="space-y-4">
                     <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
                       <p className="text-blue-700 text-sm">
-                        🔒 Your card details are securely handled by Razorpay. We never store your card information.
+                        🔒 Your card details are securely handled by Cashfree. We never store your card information.
                       </p>
                     </div>
                     <div className="min-h-[200px]">
