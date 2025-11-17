@@ -9,6 +9,7 @@ import PaymentModal from './PaymentModal'
 import CashbackOfferModal from './CashbackOfferModal'
 import ContinueChatBanner from './ContinueChatBanner'
 import VoiceCall from './VideoCall'
+import { ASTROLOGER } from '@/lib/astrologer'
 
 export default function ChatInterface() {
   const { 
@@ -515,7 +516,7 @@ export default function ChatInterface() {
               ✨
             </motion.div>
             <div>
-              <h1 className="text-xl font-bold text-white">Astrologer</h1>
+              <h1 className="text-xl font-bold text-white">{ASTROLOGER.displayName}</h1>
               <div className="flex items-center gap-2 text-sm text-gray-300">
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                 <span>Online</span>

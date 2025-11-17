@@ -9,6 +9,7 @@ import HomeScreen from '@/components/HomeScreen'
 import StartScreen from '@/components/StartScreen'
 import DailyHoroscope from '@/components/DailyHoroscope'
 import { useStore } from '@/lib/store'
+import { ASTROLOGER } from '@/lib/astrologer'
 
 export default function Home() {
   const { userProfile, currentScreen, freeChatClaimed, setCurrentScreen, setFreeChatActive, setFreeChatStartTime, setFreeChatClaimed } = useStore()
@@ -183,7 +184,7 @@ Place of Birth: Not specified`
         addMessage({
           id: `joined-${Date.now()}`,
           role: 'system',
-          content: 'Astrologer has joined',
+          content: `${ASTROLOGER.name} has joined`,
           timestamp: Date.now(),
         })
         
