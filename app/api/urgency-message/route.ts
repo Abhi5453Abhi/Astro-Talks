@@ -52,7 +52,7 @@ Keep it natural, emotional, and URGENT but caring. Make them feel you genuinely 
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `Generate urgency message for user who asked: ${userQuestions}` }
       ],
-      max_completion_tokens: 150,
+      max_completion_tokens: 3000,
       temperature: 0.9,
     })
 

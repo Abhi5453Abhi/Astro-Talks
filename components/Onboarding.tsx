@@ -461,6 +461,24 @@ export default function Onboarding() {
 
     setUserProfile(profile)
     
+    // Save to database
+    try {
+      const response = await fetch('/api/users/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profile),
+      })
+      
+      if (response.ok) {
+        console.log('✅ User profile saved to database successfully!')
+      } else {
+        console.error('Failed to save user profile to database:', await response.json())
+      }
+    } catch (error) {
+      console.error('Error saving user profile to database:', error)
+      // Continue even if database save fails - data is in localStorage
+    }
+    
     console.log('✅ User profile saved successfully!')
     setIsLoading(false)
   }

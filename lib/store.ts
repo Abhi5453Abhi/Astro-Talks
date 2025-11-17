@@ -18,6 +18,7 @@ export interface UserProfile {
   languages: ('english' | 'hindi' | 'punjabi')[]
   zodiacSign?: string
   placeOfBirth?: string
+  mobile?: string
 }
 
 export type Screen =
@@ -58,6 +59,8 @@ interface Store {
   setDailyHoroscopeForSign: (sign: string, horoscope: DailyHoroscopePayload) => void
   removeDailyHoroscopeForSign: (sign: string) => void
   reset: () => void
+  syncFromDatabase: () => Promise<void>
+  syncMessagesToDatabase: () => Promise<void>
 }
 
 export const useStore = create<Store>()(
@@ -125,6 +128,44 @@ export const useStore = create<Store>()(
           dailyHoroscopeDate: null,
           dailyHoroscopeCache: {},
         }),
+      syncFromDatabase: async () => {
+        try {
+          // Load user profile from database
+          const userResponse = await fetch('/api/users/get')
+          if (userResponse.ok) {
+            const userData = await userResponse.json()
+            if (userData.success && userData.user) {
+              set({ userProfile: userData.user })
+            }
+          }
+
+          // Load messages from database
+          const messagesResponse = await fetch('/api/messages/get')
+          if (messagesResponse.ok) {
+            const messagesData = await messagesResponse.json()
+            if (messagesData.success && messagesData.messages) {
+              set({ messages: messagesData.messages })
+            }
+          }
+        } catch (error) {
+          console.error('Error syncing from database:', error)
+          // Fallback to localStorage if database fails
+        }
+      },
+      syncMessagesToDatabase: async () => {
+        try {
+          const state = useStore.getState()
+          if (state.messages.length > 0) {
+            await fetch('/api/messages/save', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ messages: state.messages }),
+            })
+          }
+        } catch (error) {
+          console.error('Error syncing messages to database:', error)
+        }
+      },
     }),
     {
       name: 'astro-talks-storage',

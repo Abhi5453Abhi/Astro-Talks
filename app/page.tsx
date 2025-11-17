@@ -12,12 +12,21 @@ import { useStore } from '@/lib/store'
 import { ASTROLOGER } from '@/lib/astrologer'
 
 export default function Home() {
-  const { userProfile, currentScreen, freeChatClaimed, setCurrentScreen, setFreeChatActive, setFreeChatStartTime, setFreeChatClaimed } = useStore()
+  const { userProfile, currentScreen, freeChatClaimed, setCurrentScreen, setFreeChatActive, setFreeChatStartTime, setFreeChatClaimed, syncFromDatabase } = useStore()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Load user data from database on mount
+  useEffect(() => {
+    if (mounted) {
+      syncFromDatabase().catch(error => {
+        console.error('Error syncing from database:', error)
+      })
+    }
+  }, [mounted, syncFromDatabase])
 
   // Ensure start screen shows for new users
   useEffect(() => {
@@ -181,11 +190,21 @@ Place of Birth: Not specified`
       }, 1500)
       
       setTimeout(() => {
-        addMessage({
+        const joinedMessage = {
           id: `joined-${Date.now()}`,
-          role: 'system',
+          role: 'system' as const,
           content: `${ASTROLOGER.name} has joined`,
           timestamp: Date.now(),
+        }
+        addMessage(joinedMessage)
+        
+        // Save system message to database
+        fetch('/api/messages/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: [joinedMessage] }),
+        }).catch(error => {
+          console.error('Error saving system message to database:', error)
         })
         
         // Now start the free chat timer

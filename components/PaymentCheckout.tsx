@@ -144,6 +144,18 @@ export default function PaymentCheckout({
         return
       }
 
+      // Save mobile number to user profile in database
+      try {
+        await fetch('/api/users/mobile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mobile: cleanPhone }),
+        })
+      } catch (error) {
+        console.error('Error saving mobile number to database:', error)
+        // Continue with payment even if mobile save fails
+      }
+
       // Step 1: Create Cashfree order
       const orderResponse = await fetch('/api/cashfree/create-order', {
         method: 'POST',

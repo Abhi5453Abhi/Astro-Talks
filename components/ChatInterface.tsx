@@ -25,7 +25,9 @@ export default function ChatInterface() {
     setFreeChatActive,
     setFreeChatExpired,
     setCurrentScreen,
-    walletBalance
+    walletBalance,
+    syncFromDatabase,
+    syncMessagesToDatabase
   } = useStore()
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
@@ -238,6 +240,18 @@ export default function ChatInterface() {
     }
   }, [freeChatActive])
 
+  // Load messages from database on mount
+  useEffect(() => {
+    const loadFromDatabase = async () => {
+      try {
+        await syncFromDatabase()
+      } catch (error) {
+        console.error('Error loading from database:', error)
+      }
+    }
+    loadFromDatabase()
+  }, [syncFromDatabase])
+
   // Check balance when entering chat interface
   useEffect(() => {
     // Only check if not in active free chat and not a paid user
@@ -356,6 +370,18 @@ export default function ChatInterface() {
     }
 
     addMessage(userMessage)
+    
+    // Save message to database
+    try {
+      await fetch('/api/messages/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [userMessage] }),
+      })
+    } catch (error) {
+      console.error('Error saving message to database:', error)
+    }
+    
     setInput('')
     setIsTyping(true)
 
@@ -401,28 +427,63 @@ export default function ChatInterface() {
         console.log('📨 AI Response parts:', parts.length, parts)
         
         // Add first part immediately
+        const assistantMessages = []
         if (parts[0]) {
-          addMessage({
+          const firstMessage = {
             id: `${Date.now()}-1`,
-            role: 'assistant',
+            role: 'assistant' as const,
             content: parts[0],
             timestamp: Date.now(),
             isPaid: data.isPaidContent,
-          })
+          }
+          addMessage(firstMessage)
+          assistantMessages.push(firstMessage)
         }
         
         // Add remaining parts with 1.5s delays
         parts.slice(1).forEach((part: string, index: number) => {
           setTimeout(() => {
-            addMessage({
+            const message = {
               id: `${Date.now()}-${index + 2}`,
-              role: 'assistant',
+              role: 'assistant' as const,
               content: part,
               timestamp: Date.now(),
               isPaid: data.isPaidContent,
-            })
+            }
+            addMessage(message)
+            assistantMessages.push(message)
+            
+            // Save all assistant messages to database after last one
+            if (index === parts.length - 2) {
+              setTimeout(async () => {
+                try {
+                  await fetch('/api/messages/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages: assistantMessages }),
+                  })
+                } catch (error) {
+                  console.error('Error saving assistant messages to database:', error)
+                }
+              }, 100)
+            }
           }, (index + 1) * 1500)
         })
+        
+        // Save assistant messages to database
+        if (assistantMessages.length > 0) {
+          setTimeout(async () => {
+            try {
+              await fetch('/api/messages/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: assistantMessages }),
+              })
+            } catch (error) {
+              console.error('Error saving assistant messages to database:', error)
+            }
+          }, parts.length * 1500 + 500)
+        }
       } catch (error) {
         console.error('Chat error:', error)
         addMessage({
