@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get base URL - Cashfree requires HTTPS URLs
-    const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL
+    let baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL
     if (!baseUrl) {
       return NextResponse.json(
         { error: 'NEXTAUTH_URL or VERCEL_URL must be set' },
@@ -122,12 +122,22 @@ export async function POST(request: NextRequest) {
     }
     
     // Ensure HTTPS (required by Cashfree)
-    const httpsBaseUrl = baseUrl.startsWith('https://') 
-      ? baseUrl 
-      : baseUrl.replace(/^http:\/\//, 'https://')
+    // Remove any existing protocol
+    baseUrl = baseUrl.replace(/^https?:\/\//, '')
+    // Remove trailing slash
+    baseUrl = baseUrl.replace(/\/$/, '')
+    // Always prepend https://
+    const httpsBaseUrl = `https://${baseUrl}`
     
     const returnUrl = `${httpsBaseUrl}/api/cashfree/callback?order_id={order_id}`
     const notifyUrl = `${httpsBaseUrl}/api/cashfree/webhook`
+    
+    console.log('Cashfree URLs:', {
+      originalBaseUrl: process.env.NEXTAUTH_URL || process.env.VERCEL_URL,
+      httpsBaseUrl,
+      returnUrl,
+      notifyUrl,
+    })
 
     // Create order using Cashfree API
     console.log('Creating Cashfree order:', {
