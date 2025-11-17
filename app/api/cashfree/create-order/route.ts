@@ -15,18 +15,37 @@ export async function POST(request: NextRequest) {
     const secretKey = process.env.CASHFREE_SECRET_KEY
 
     if (!appId || !secretKey) {
-      console.error('Cashfree credentials missing:', {
+      const allCashfreeKeys = Object.keys(process.env).filter(key => 
+        key.toUpperCase().includes('CASHFREE')
+      )
+      
+      console.error('❌ Cashfree credentials missing:', {
         hasAppId: !!appId,
         hasSecretKey: !!secretKey,
         nodeEnv: process.env.NODE_ENV,
-        allEnvKeys: Object.keys(process.env).filter(key => key.includes('CASHFREE')),
+        vercelEnv: process.env.VERCEL_ENV,
+        allCashfreeKeys,
+        allEnvKeysCount: Object.keys(process.env).length,
       })
+      
       return NextResponse.json(
         { 
           error: 'Cashfree credentials not configured',
-          details: 'Please ensure CASHFREE_APP_ID and CASHFREE_SECRET_KEY are set in your environment variables. If you just added them to Vercel, you need to redeploy your application.',
-          hasAppId: !!appId,
-          hasSecretKey: !!secretKey,
+          details: 'Please ensure CASHFREE_APP_ID and CASHFREE_SECRET_KEY are set in your Vercel environment variables for Production environment. After adding them, you MUST redeploy your application.',
+          diagnostic: {
+            hasAppId: !!appId,
+            hasSecretKey: !!secretKey,
+            nodeEnv: process.env.NODE_ENV,
+            vercelEnv: process.env.VERCEL_ENV,
+            foundCashfreeKeys: allCashfreeKeys,
+          },
+          troubleshooting: [
+            '1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables',
+            '2. Verify CASHFREE_APP_ID and CASHFREE_SECRET_KEY are set',
+            '3. Ensure they are enabled for "Production" environment',
+            '4. After adding/updating, go to Deployments and click "Redeploy"',
+            '5. Wait for deployment to complete before testing again',
+          ],
         },
         { status: 500 }
       )
