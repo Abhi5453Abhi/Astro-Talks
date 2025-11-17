@@ -92,8 +92,9 @@ export async function POST(request: NextRequest) {
     // Generate order ID if not provided
     const order_id = orderId || `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     
-    // Convert amount to paise (smallest currency unit)
-    const order_amount = Math.round(amount * 100)
+    // Cashfree API expects amount in decimal format (rupees), not paise
+    // For ₹236, send 236.00, not 23600
+    const order_amount = parseFloat(amount.toFixed(2))
 
     // Validate and format phone number
     // Cashfree requires a 10-digit Indian phone number
