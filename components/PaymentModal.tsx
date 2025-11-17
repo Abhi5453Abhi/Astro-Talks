@@ -42,17 +42,17 @@ export default function PaymentModal({ isOpen, onClose, onSuccess }: PaymentModa
     setShowCheckout(true)
   }
 
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = (walletCreditAmount?: number) => {
     if (!selectedOption) return
     
-    // Calculate total amount with extra
+    // Use verified amount from payment or calculate from selected option
     const extraAmount = (selectedOption.amount * selectedOption.extraPercent) / 100
-    const totalAmount = selectedOption.amount + extraAmount
+    const totalWalletCredit = walletCreditAmount !== undefined 
+      ? walletCreditAmount 
+      : selectedOption.amount + extraAmount
     
-    alert(`Payment successful!\n\nRecharged: ₹${selectedOption.amount}\nBonus: ₹${extraAmount}\nTotal Added: ₹${totalAmount}`)
-    
-    // Update wallet balance
-    setWalletBalance(walletBalance + totalAmount)
+    // Update wallet balance with verified amount
+    setWalletBalance(walletBalance + totalWalletCredit)
     
     // Mark as paid user
     setPaidUser(true)

@@ -9,7 +9,7 @@ interface PaymentCheckoutProps {
   amount: number
   extraPercent: number
   onClose: () => void
-  onPaymentSuccess: () => void
+  onPaymentSuccess: (walletCreditAmount?: number) => void
 }
 
 // Extend Window interface to include Cashfree
@@ -60,14 +60,21 @@ export default function PaymentCheckout({
     }
   }, [cashfreeLoaded])
 
-  const handleSuccess = () => {
+  const handleSuccess = (walletCreditAmount: number) => {
     setShowSuccessModal(true)
     setIsProcessing(false)
+    // Pass wallet credit amount to onPaymentSuccess callback
+    // Wallet credit = base amount + extra amount (GST is a fee, not added to wallet)
+    setTimeout(() => {
+      onPaymentSuccess(walletCreditAmount)
+    }, 100)
   }
 
   const handleSuccessModalClose = () => {
     setShowSuccessModal(false)
-    onPaymentSuccess()
+    // Calculate wallet credit: base amount + extra amount
+    const walletCredit = amount + extraAmount
+    onPaymentSuccess(walletCredit)
     onClose()
   }
 
@@ -85,7 +92,9 @@ export default function PaymentCheckout({
       const verifyData = await verifyResponse.json()
 
       if (verifyResponse.ok && verifyData.success) {
-        handleSuccess()
+        // Wallet credit = base amount + extra amount (GST is a fee, not added to wallet)
+        const walletCreditAmount = amount + extraAmount
+        handleSuccess(walletCreditAmount)
       } else {
         throw new Error(verifyData.error || 'Payment verification failed')
       }
@@ -162,6 +171,17 @@ export default function PaymentCheckout({
 
       setCashfreeOrderId(orderData.orderId)
       setPaymentSessionId(orderData.paymentSessionId)
+
+      // Store payment details in sessionStorage for callback handling
+      // Wallet credit = base amount + extra amount (GST is a fee, not added to wallet)
+      const walletCreditAmount = amount + extraAmount
+      sessionStorage.setItem('pending_payment', JSON.stringify({
+        orderId: orderData.orderId,
+        baseAmount: amount,
+        extraAmount: extraAmount,
+        walletCreditAmount: walletCreditAmount,
+        totalAmount: totalAmount,
+      }))
 
       // Step 2: Initialize Cashfree Checkout
       // Determine mode: sandbox mode uses test credentials, production uses live credentials

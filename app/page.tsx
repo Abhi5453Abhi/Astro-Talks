@@ -37,27 +37,77 @@ export default function Home() {
 
   // Handle payment callback from Cashfree
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && mounted) {
       const urlParams = new URLSearchParams(window.location.search)
       const paymentStatus = urlParams.get('payment')
       const orderId = urlParams.get('order_id')
       
       if (paymentStatus && orderId) {
-        // Clean up URL
+        // Clean up URL immediately to prevent issues
         const newUrl = window.location.pathname
         window.history.replaceState({}, '', newUrl)
         
         if (paymentStatus === 'success') {
-          // Payment successful - this will be handled by PaymentModal's onPaymentSuccess
-          // The PaymentCheckout component will detect this and show success modal
-          console.log('✅ Payment successful:', orderId)
+          // Payment successful - verify payment and update wallet
+          console.log('✅ Payment successful, verifying...', orderId)
+          
+          // Get stored payment details
+          const storedPayment = sessionStorage.getItem('pending_payment')
+          let paymentDetails = null
+          if (storedPayment) {
+            try {
+              paymentDetails = JSON.parse(storedPayment)
+              // Only use if order ID matches
+              if (paymentDetails.orderId !== orderId) {
+                paymentDetails = null
+              }
+            } catch (e) {
+              console.error('Error parsing stored payment:', e)
+            }
+          }
+          
+          // Verify payment and update wallet balance
+          fetch('/api/cashfree/verify-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId }),
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                // Update wallet balance if we have payment details
+                if (paymentDetails) {
+                  const { walletBalance, setWalletBalance, setPaidUser } = useStore.getState()
+                  setWalletBalance(walletBalance + paymentDetails.walletCreditAmount)
+                  setPaidUser(true)
+                  // Clear stored payment
+                  sessionStorage.removeItem('pending_payment')
+                  console.log('✅ Wallet updated with:', paymentDetails.walletCreditAmount)
+                }
+                // Navigate to home screen to show updated wallet
+                setCurrentScreen('home')
+                console.log('✅ Payment verified successfully')
+              } else {
+                alert(`Payment verification failed: ${data.error || 'Unknown error'}`)
+                sessionStorage.removeItem('pending_payment')
+              }
+            })
+            .catch(error => {
+              console.error('Payment verification error:', error)
+              alert('Payment verification failed. Please contact support.')
+              sessionStorage.removeItem('pending_payment')
+            })
         } else if (paymentStatus === 'failed' || paymentStatus === 'error') {
           const message = urlParams.get('message') || 'Payment failed'
           alert(`Payment ${paymentStatus === 'error' ? 'error' : 'failed'}: ${message}`)
+          // Clear stored payment on failure
+          sessionStorage.removeItem('pending_payment')
+          // Navigate to home screen
+          setCurrentScreen('home')
         }
       }
     }
-  }, [])
+  }, [mounted, setCurrentScreen])
 
   const handleStartFreeChat = async () => {
     console.log('🎁 Starting free chat...')

@@ -8,7 +8,10 @@ export async function GET(request: NextRequest) {
     const paymentStatus = searchParams.get('payment_status')
 
     if (!orderId) {
-      return NextResponse.redirect(new URL('/?payment=error&message=Order ID missing', request.url))
+      // Get base URL for redirect
+      const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
+      const httpsBaseUrl = baseUrl.startsWith('https://') ? baseUrl : `https://${baseUrl.replace(/^https?:\/\//, '')}`
+      return NextResponse.redirect(new URL(`/?payment=error&message=Order ID missing`, httpsBaseUrl))
     }
 
     // Verify payment status
@@ -16,11 +19,22 @@ export async function GET(request: NextRequest) {
     const secretKey = process.env.CASHFREE_SECRET_KEY
 
     if (!appId || !secretKey) {
-      return NextResponse.redirect(new URL('/?payment=error&message=Configuration error', request.url))
+      const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
+      const httpsBaseUrl = baseUrl.startsWith('https://') ? baseUrl : `https://${baseUrl.replace(/^https?:\/\//, '')}`
+      return NextResponse.redirect(new URL(`/?payment=error&message=Configuration error`, httpsBaseUrl))
     }
 
+    // Determine API base URL based on mode
+    const secretKeyLower = secretKey.toLowerCase()
+    const appIdLower = appId.toLowerCase()
+    const isProduction = 
+      (secretKeyLower.includes('_prod_') || secretKeyLower.includes('production')) ||
+      (appId.startsWith('CF') && !appIdLower.includes('test') && !appIdLower.includes('sandbox')) ||
+      (!secretKeyLower.includes('test') && !secretKeyLower.includes('sandbox') && !appIdLower.includes('test') && !appIdLower.includes('sandbox'))
+    const apiBaseUrl = isProduction ? 'https://api.cashfree.com' : 'https://sandbox.cashfree.com'
+
     // Get order details from Cashfree
-    const response = await fetch(`https://api.cashfree.com/pg/orders/${orderId}`, {
+    const response = await fetch(`${apiBaseUrl}/pg/orders/${orderId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -32,23 +46,33 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json()
 
+    // Get base URL for redirect
+    const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
+    let httpsBaseUrl = baseUrl.replace(/^https?:\/\//, '')
+    httpsBaseUrl = httpsBaseUrl.replace(/\/$/, '')
+    httpsBaseUrl = `https://${httpsBaseUrl}`
+
     if (!response.ok) {
       console.error('Cashfree order fetch error:', data)
-      return NextResponse.redirect(new URL(`/?payment=error&message=${encodeURIComponent(data.message || 'Payment verification failed')}`, request.url))
+      return NextResponse.redirect(new URL(`/?payment=error&message=${encodeURIComponent(data.message || 'Payment verification failed')}`, httpsBaseUrl))
     }
 
     // Check payment status
     const status = data.payment_status || data.order_status || paymentStatus
     
     if (status === 'PAID' || status === 'SUCCESS') {
-      // Redirect to success page with order details
-      return NextResponse.redirect(new URL(`/?payment=success&order_id=${orderId}&payment_id=${data.payment_id || paymentId || ''}`, request.url))
+      // Redirect to success page with order details - use relative path to stay on same domain
+      return NextResponse.redirect(new URL(`/?payment=success&order_id=${orderId}&payment_id=${data.payment_id || paymentId || ''}`, httpsBaseUrl))
     } else {
-      return NextResponse.redirect(new URL(`/?payment=failed&order_id=${orderId}&status=${status}`, request.url))
+      return NextResponse.redirect(new URL(`/?payment=failed&order_id=${orderId}&status=${status}`, httpsBaseUrl))
     }
   } catch (error: any) {
     console.error('Payment callback error:', error)
-    return NextResponse.redirect(new URL(`/?payment=error&message=${encodeURIComponent(error.message)}`, request.url))
+    const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
+    let httpsBaseUrl = baseUrl.replace(/^https?:\/\//, '')
+    httpsBaseUrl = httpsBaseUrl.replace(/\/$/, '')
+    httpsBaseUrl = `https://${httpsBaseUrl}`
+    return NextResponse.redirect(new URL(`/?payment=error&message=${encodeURIComponent(error.message)}`, httpsBaseUrl))
   }
 }
 
