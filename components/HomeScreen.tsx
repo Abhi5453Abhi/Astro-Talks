@@ -206,6 +206,10 @@ export default function HomeScreen() {
                 <span className="text-xs">Chat</span>
               </button>
               <button className="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-300">
+                <span className="text-2xl">📺</span>
+                <span className="text-xs">Live</span>
+              </button>
+              <button className="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-300">
                 <span className="text-2xl">📞</span>
                 <span className="text-xs">Call</span>
               </button>

@@ -33,6 +33,7 @@ export default function PaymentCheckout({
   const [paymentSessionId, setPaymentSessionId] = useState<string>('')
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [cashfreeLoaded, setCashfreeLoaded] = useState(false)
+  const [customerPhone, setCustomerPhone] = useState<string>('')
   const gstPercent = 18.0
   const gstAmount = (amount * gstPercent) / 100
   const totalAmount = amount + gstAmount
@@ -124,6 +125,16 @@ export default function PaymentCheckout({
     }
 
     try {
+      // Validate phone number before proceeding
+      const phoneRegex = /^[6-9]\d{9}$/
+      const cleanPhone = customerPhone.replace(/\D/g, '')
+      
+      if (!customerPhone || cleanPhone.length !== 10 || !phoneRegex.test(cleanPhone)) {
+        alert('Please enter a valid 10-digit mobile number')
+        setIsProcessing(false)
+        return
+      }
+
       // Step 1: Create Cashfree order
       const orderResponse = await fetch('/api/cashfree/create-order', {
         method: 'POST',
@@ -131,6 +142,7 @@ export default function PaymentCheckout({
         body: JSON.stringify({
           amount: totalAmount,
           currency: 'INR',
+          customerPhone: cleanPhone,
         }),
       })
 
@@ -140,18 +152,33 @@ export default function PaymentCheckout({
         throw new Error(orderData.error || 'Failed to create order')
       }
 
+      // Validate that we have a payment session ID
+      if (!orderData.paymentSessionId) {
+        console.error('Payment session ID missing from response:', orderData)
+        throw new Error('Payment session ID not received. Please try again.')
+      }
+
+      console.log('Order created with payment session ID:', orderData.paymentSessionId)
+
       setCashfreeOrderId(orderData.orderId)
       setPaymentSessionId(orderData.paymentSessionId)
 
       // Step 2: Initialize Cashfree Checkout
       // Determine mode: sandbox mode uses test credentials, production uses live credentials
       // Cashfree test credentials typically don't start with 'CF' or contain 'test'
-      const isProduction = process.env.NEXT_PUBLIC_CASHFREE_APP_ID && 
-                          !process.env.NEXT_PUBLIC_CASHFREE_APP_ID.includes('test') &&
-                          process.env.NEXT_PUBLIC_CASHFREE_APP_ID.startsWith('CF')
+      // Use the mode from the API response if provided, otherwise detect from app ID
+      const mode = orderData.mode || (
+        process.env.NEXT_PUBLIC_CASHFREE_APP_ID && 
+        !process.env.NEXT_PUBLIC_CASHFREE_APP_ID.includes('test') &&
+        process.env.NEXT_PUBLIC_CASHFREE_APP_ID.startsWith('CF')
+          ? 'production' 
+          : 'sandbox'
+      )
+      
+      console.log('Using Cashfree mode:', mode)
       
       const cashfree = window.Cashfree({
-        mode: isProduction ? 'production' : 'sandbox',
+        mode: mode,
       })
 
       const checkoutOptions = {
@@ -159,8 +186,15 @@ export default function PaymentCheckout({
         redirectTarget: '_self',
       }
 
+      console.log('Initializing Cashfree checkout with options:', checkoutOptions)
+      console.log('Payment session ID length:', orderData.paymentSessionId?.length)
+
       // Open Cashfree checkout - this will redirect to payment page
-      cashfree.checkout(checkoutOptions)
+      cashfree.checkout(checkoutOptions).catch((error: any) => {
+        console.error('Cashfree checkout error:', error)
+        setIsProcessing(false)
+        alert('Failed to open payment gateway. Please try again.')
+      })
       
       // Note: After payment, Cashfree will redirect back to the return_url
       // The payment verification will happen via URL parameters or webhook
@@ -206,6 +240,7 @@ export default function PaymentCheckout({
         <>
           {/* Backdrop */}
           <motion.div
+            key="backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -213,7 +248,7 @@ export default function PaymentCheckout({
           />
 
           {/* Modal */}
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          <div key="modal" className="fixed inset-0 flex items-center justify-center z-50 p-4">
             <motion.div
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
@@ -276,6 +311,27 @@ export default function PaymentCheckout({
                   </div>
                 )}
 
+                {/* Phone Number Input */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Mobile Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={customerPhone}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 10)
+                      setCustomerPhone(value)
+                    }}
+                    placeholder="Enter 10-digit mobile number"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-amber-500 text-gray-900"
+                    required
+                  />
+                  {customerPhone && customerPhone.length !== 10 && (
+                    <p className="text-red-500 text-xs mt-1">Please enter a valid 10-digit mobile number</p>
+                  )}
+                </div>
+
                 {/* Card Form View */}
                 {showCardForm ? (
                   <div className="space-y-4">
@@ -302,7 +358,7 @@ export default function PaymentCheckout({
                       <div className="grid grid-cols-3 gap-3 mb-4">
                         <button
                           onClick={() => handleUpiPayment('phonepe')}
-                          disabled={isProcessing}
+                          disabled={isProcessing || customerPhone.length !== 10}
                           className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all disabled:opacity-50 ${
                             selectedPaymentMethod === 'phonepe'
                               ? 'border-amber-500 bg-amber-50'
@@ -317,7 +373,7 @@ export default function PaymentCheckout({
 
                         <button
                           onClick={() => handleUpiPayment('paytm')}
-                          disabled={isProcessing}
+                          disabled={isProcessing || customerPhone.length !== 10}
                           className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all disabled:opacity-50 ${
                             selectedPaymentMethod === 'paytm'
                               ? 'border-blue-500 bg-blue-50'
@@ -332,7 +388,7 @@ export default function PaymentCheckout({
 
                         <button
                           onClick={() => handleUpiPayment('gpay')}
-                          disabled={isProcessing}
+                          disabled={isProcessing || customerPhone.length !== 10}
                           className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all disabled:opacity-50 ${
                             selectedPaymentMethod === 'gpay'
                               ? 'border-green-500 bg-green-50'
@@ -354,7 +410,7 @@ export default function PaymentCheckout({
                         
                         <button
                           onClick={handleCardPaymentClick}
-                          disabled={isProcessing}
+                          disabled={isProcessing || customerPhone.length !== 10}
                           className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all mb-2 disabled:opacity-50 ${
                             selectedPaymentMethod === 'card'
                               ? 'border-amber-400 bg-amber-50'
@@ -379,7 +435,7 @@ export default function PaymentCheckout({
                   <motion.button
                     whileTap={{ scale: 0.98 }}
                     onClick={handleCardFormSubmit}
-                    disabled={isProcessing}
+                    disabled={isProcessing || customerPhone.length !== 10}
                     className="w-full py-4 bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 hover:from-yellow-400 hover:via-yellow-500 hover:to-yellow-600 text-gray-900 rounded-2xl font-bold text-lg transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isProcessing ? (
