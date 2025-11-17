@@ -114,7 +114,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Get base URL - Cashfree requires HTTPS URLs
-    let baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL
+    // Prefer NEXTAUTH_URL (production domain) over VERCEL_URL (preview URLs)
+    // This prevents redirecting to preview URLs which causes session loss
+    let baseUrl = process.env.NEXTAUTH_URL
+    if (!baseUrl) {
+      // Only use VERCEL_URL if NEXTAUTH_URL is not set
+      baseUrl = process.env.VERCEL_URL
+    }
+    
     if (!baseUrl) {
       return NextResponse.json(
         { error: 'NEXTAUTH_URL or VERCEL_URL must be set' },
@@ -134,7 +141,9 @@ export async function POST(request: NextRequest) {
     const notifyUrl = `${httpsBaseUrl}/api/cashfree/webhook`
     
     console.log('Cashfree URLs:', {
-      originalBaseUrl: process.env.NEXTAUTH_URL || process.env.VERCEL_URL,
+      nextAuthUrl: process.env.NEXTAUTH_URL,
+      vercelUrl: process.env.VERCEL_URL,
+      usingBaseUrl: baseUrl,
       httpsBaseUrl,
       returnUrl,
       notifyUrl,
