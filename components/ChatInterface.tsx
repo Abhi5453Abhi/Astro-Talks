@@ -427,7 +427,13 @@ export default function ChatInterface() {
         console.log('📨 AI Response parts:', parts.length, parts)
         
         // Add first part immediately
-        const assistantMessages = []
+        const assistantMessages: Array<{
+          id: string
+          role: 'assistant'
+          content: string
+          timestamp: number
+          isPaid?: boolean
+        }> = []
         if (parts[0]) {
           const firstMessage = {
             id: `${Date.now()}-1`,
