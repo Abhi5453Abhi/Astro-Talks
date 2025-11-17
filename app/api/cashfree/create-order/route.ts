@@ -18,9 +18,16 @@ export async function POST(request: NextRequest) {
       console.error('Cashfree credentials missing:', {
         hasAppId: !!appId,
         hasSecretKey: !!secretKey,
+        nodeEnv: process.env.NODE_ENV,
+        allEnvKeys: Object.keys(process.env).filter(key => key.includes('CASHFREE')),
       })
       return NextResponse.json(
-        { error: 'Cashfree credentials not configured' },
+        { 
+          error: 'Cashfree credentials not configured',
+          details: 'Please ensure CASHFREE_APP_ID and CASHFREE_SECRET_KEY are set in your environment variables. If you just added them to Vercel, you need to redeploy your application.',
+          hasAppId: !!appId,
+          hasSecretKey: !!secretKey,
+        },
         { status: 500 }
       )
     }
