@@ -7,10 +7,40 @@ export async function GET(request: NextRequest) {
     const paymentId = searchParams.get('payment_id')
     const paymentStatus = searchParams.get('payment_status')
 
+    // Get the origin from the request URL to stay on the same domain (prevents logout)
+    // This ensures we redirect to the same domain the user is on, not a different Vercel preview URL
+    const requestOrigin = request.nextUrl.origin || 
+                         (request.headers.get('origin') || request.headers.get('host'))
+    
+    let baseUrl: string
+    
+    if (requestOrigin) {
+      // Use the request origin to stay on the same domain
+      if (requestOrigin.startsWith('http://') || requestOrigin.startsWith('https://')) {
+        baseUrl = requestOrigin
+      } else {
+        // If it's just a host, construct the URL
+        const protocol = request.headers.get('x-forwarded-proto') || 'https'
+        baseUrl = `${protocol}://${requestOrigin}`
+      }
+    } else {
+      // Fallback to environment variables (prefer NEXTAUTH_URL which should be production domain)
+      baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
+    }
+    
+    // Ensure HTTPS
+    let httpsBaseUrl = baseUrl.replace(/^https?:\/\//, '')
+    httpsBaseUrl = httpsBaseUrl.replace(/\/$/, '')
+    httpsBaseUrl = `https://${httpsBaseUrl}`
+    
+    console.log('Callback redirect URL:', {
+      requestOrigin,
+      baseUrl,
+      httpsBaseUrl,
+      requestUrl: request.url,
+    })
+
     if (!orderId) {
-      // Get base URL for redirect
-      const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
-      const httpsBaseUrl = baseUrl.startsWith('https://') ? baseUrl : `https://${baseUrl.replace(/^https?:\/\//, '')}`
       return NextResponse.redirect(new URL(`/?payment=error&message=Order ID missing`, httpsBaseUrl))
     }
 
@@ -19,8 +49,6 @@ export async function GET(request: NextRequest) {
     const secretKey = process.env.CASHFREE_SECRET_KEY
 
     if (!appId || !secretKey) {
-      const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
-      const httpsBaseUrl = baseUrl.startsWith('https://') ? baseUrl : `https://${baseUrl.replace(/^https?:\/\//, '')}`
       return NextResponse.redirect(new URL(`/?payment=error&message=Configuration error`, httpsBaseUrl))
     }
 
@@ -46,12 +74,6 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json()
 
-    // Get base URL for redirect
-    const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
-    let httpsBaseUrl = baseUrl.replace(/^https?:\/\//, '')
-    httpsBaseUrl = httpsBaseUrl.replace(/\/$/, '')
-    httpsBaseUrl = `https://${httpsBaseUrl}`
-
     if (!response.ok) {
       console.error('Cashfree order fetch error:', data)
       return NextResponse.redirect(new URL(`/?payment=error&message=${encodeURIComponent(data.message || 'Payment verification failed')}`, httpsBaseUrl))
@@ -68,11 +90,24 @@ export async function GET(request: NextRequest) {
     }
   } catch (error: any) {
     console.error('Payment callback error:', error)
-    const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
-    let httpsBaseUrl = baseUrl.replace(/^https?:\/\//, '')
-    httpsBaseUrl = httpsBaseUrl.replace(/\/$/, '')
-    httpsBaseUrl = `https://${httpsBaseUrl}`
-    return NextResponse.redirect(new URL(`/?payment=error&message=${encodeURIComponent(error.message)}`, httpsBaseUrl))
+    // Get origin from request URL for error redirect
+    const requestOrigin = request.nextUrl.origin || 
+                         (request.headers.get('origin') || request.headers.get('host'))
+    let errorBaseUrl: string
+    if (requestOrigin) {
+      if (requestOrigin.startsWith('http://') || requestOrigin.startsWith('https://')) {
+        errorBaseUrl = requestOrigin
+      } else {
+        const protocol = request.headers.get('x-forwarded-proto') || 'https'
+        errorBaseUrl = `${protocol}://${requestOrigin}`
+      }
+    } else {
+      errorBaseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
+    }
+    let httpsErrorUrl = errorBaseUrl.replace(/^https?:\/\//, '')
+    httpsErrorUrl = httpsErrorUrl.replace(/\/$/, '')
+    httpsErrorUrl = `https://${httpsErrorUrl}`
+    return NextResponse.redirect(new URL(`/?payment=error&message=${encodeURIComponent(error.message)}`, httpsErrorUrl))
   }
 }
 
