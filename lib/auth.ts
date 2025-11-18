@@ -38,20 +38,8 @@ export const authOptions: NextAuthOptions = {
       if (session.user && token.sub) {
         session.user.id = token.sub
         
-        // Try to load user profile from database
-        try {
-          const result = await query(
-            'SELECT * FROM users WHERE id = $1',
-            [token.sub]
-          )
-          if (result.rows.length > 0) {
-            const dbUser = result.rows[0]
-            // Attach database user ID to session
-            session.user.dbId = dbUser.id
-          }
-        } catch (error) {
-          console.error('Error loading user from database:', error)
-        }
+        // User ID is already available in session.user.id (from token.sub)
+        // No need to attach dbId as it's the same as the user ID
       }
       return session
     },
