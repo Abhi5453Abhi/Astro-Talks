@@ -30,11 +30,13 @@ export default function Onboarding() {
 
   const { setUserProfile, setDailyHoroscope, setDailyHoroscopeForSign } = useStore()
   const { data: session } = useSession()
+  
+  // Pre-fill name from Google sign-in, but allow user to edit it
   useEffect(() => {
     if (session?.user?.name && !name) {
       setName(session.user.name)
     }
-  }, [session?.user?.name, name])
+  }, [session?.user?.name]) // Removed 'name' from dependencies to allow editing
 
   // Debug: Track step changes
   useEffect(() => {
