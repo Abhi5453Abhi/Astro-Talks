@@ -72,7 +72,6 @@ export default function HomeScreen() {
         </button>
         
         <div className="flex items-center gap-2 px-4 py-2 bg-slate-700/50 border border-slate-600/50 rounded-full shadow-sm">
-          <span className="text-xl">💰</span>
           <span className="font-bold text-white">₹ {walletBalance}</span>
           <button className="w-6 h-6 rounded-full bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center text-white text-sm font-bold">
             +
@@ -140,15 +139,6 @@ export default function HomeScreen() {
             <button className="px-6 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 font-bold rounded-full hover:from-yellow-500 hover:to-yellow-600 transition-all shadow-lg">
               RECHARGE NOW
             </button>
-          </div>
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-6xl opacity-90">
-            💰
-          </div>
-          <div className="absolute right-12 top-6 text-4xl opacity-70">
-            💵
-          </div>
-          <div className="absolute right-2 bottom-4 text-5xl opacity-60">
-            💳
           </div>
         </motion.div>
       </div>

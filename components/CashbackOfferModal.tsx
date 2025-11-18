@@ -46,22 +46,6 @@ export default function CashbackOfferModal({ isOpen, onRecharge, onClose }: Cash
                   transition={{ type: "spring", stiffness: 200, damping: 10 }}
                   className="relative inline-block"
                 >
-                  {/* Decorative elements */}
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                    className="absolute -top-3 -left-3 text-yellow-400 text-2xl"
-                  >
-                    ✨
-                  </motion.div>
-                  <motion.div
-                    animate={{ rotate: -360 }}
-                    transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-                    className="absolute -bottom-2 -right-2 text-yellow-400 text-xl"
-                  >
-                    ✨
-                  </motion.div>
-                  
                   <div className="bg-gradient-to-br from-green-400 via-green-500 to-green-600 rounded-2xl px-8 py-4 shadow-xl transform rotate-[-2deg]">
                     <div className="text-white font-black text-5xl mb-1">
                       100%
