@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { useSession } from 'next-auth/react'
 import Onboarding from '@/components/Onboarding'
 import ChatInterface from '@/components/ChatInterface'
 import FreeChatOption from '@/components/FreeChatOption'
@@ -13,6 +14,7 @@ import { ASTROLOGER } from '@/lib/astrologer'
 
 export default function Home() {
   const { userProfile, currentScreen, freeChatClaimed, setCurrentScreen, setFreeChatActive, setFreeChatStartTime, setFreeChatClaimed, syncFromDatabase } = useStore()
+  const { status } = useSession()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -27,6 +29,17 @@ export default function Home() {
       })
     }
   }, [mounted, syncFromDatabase])
+
+  // Handle authentication state changes - same flow as StartScreen
+  useEffect(() => {
+    if (mounted && status === 'authenticated') {
+      // If user just signed in (from dashboard or start screen), check if they need onboarding
+      if (!userProfile && currentScreen !== 'onboarding' && currentScreen !== 'start') {
+        console.log('🔄 User authenticated but no profile, redirecting to onboarding')
+        setCurrentScreen('onboarding')
+      }
+    }
+  }, [mounted, status, userProfile, currentScreen, setCurrentScreen])
 
   // Ensure start screen shows for new users
   useEffect(() => {
