@@ -576,6 +576,11 @@ export default function Onboarding() {
               className="w-full px-6 py-5 bg-slate-800/40 backdrop-blur-sm border border-slate-700/30 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500/50 focus:ring-2 focus:ring-yellow-500/20 transition-all duration-300 text-lg font-light tracking-wide"
               autoFocus
             />
+            {session?.user?.name && name === session.user.name && (
+              <p className="text-xs text-gray-400 mt-2 text-center">
+                You can edit this name if you'd like
+              </p>
+            )}
           </div>
           <div className="flex gap-4 pt-2">
             <motion.button
