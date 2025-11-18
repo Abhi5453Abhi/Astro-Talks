@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
 import { useStore } from '@/lib/store'
 import Message from './Message'
 import TypingIndicator from './TypingIndicator'
@@ -575,13 +576,27 @@ export default function ChatInterface() {
             >
               ←
             </button>
-            <motion.div
-              animate={{ rotate: [0, 360] }}
-              transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-              className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500 flex items-center justify-center text-xl shadow-lg"
-            >
-              ✨
-            </motion.div>
+            <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-amber-300 bg-gradient-to-br from-amber-400 to-amber-500">
+              <Image
+                src={ASTROLOGER.image}
+                alt={ASTROLOGER.name}
+                fill
+                className="object-cover"
+                unoptimized
+                onError={(e) => {
+                  // Fallback to sparkle icon if image doesn't exist
+                  const target = e.target as HTMLImageElement
+                  target.style.display = 'none'
+                  const parent = target.parentElement
+                  if (parent && !parent.querySelector('.fallback-icon')) {
+                    const fallback = document.createElement('div')
+                    fallback.className = 'fallback-icon w-full h-full flex items-center justify-center text-xl'
+                    fallback.textContent = '✨'
+                    parent.appendChild(fallback)
+                  }
+                }}
+              />
+            </div>
             <div>
               <h1 className="text-xl font-bold text-white">{ASTROLOGER.displayName}</h1>
               <div className="flex items-center gap-2 text-sm text-gray-300">
