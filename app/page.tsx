@@ -23,19 +23,20 @@ export default function Home() {
 
   // Load user data from database on mount
   useEffect(() => {
-    if (mounted) {
+    if (mounted && status === 'authenticated') {
       syncFromDatabase().catch(error => {
         console.error('Error syncing from database:', error)
       })
     }
-  }, [mounted, syncFromDatabase])
+  }, [mounted, status, syncFromDatabase])
 
   // Handle authentication state changes - same flow as StartScreen
   useEffect(() => {
     if (mounted && status === 'authenticated') {
       // If user just signed in (from dashboard or start screen), check if they need onboarding
-      if (!userProfile && currentScreen !== 'onboarding' && currentScreen !== 'start') {
-        console.log('🔄 User authenticated but no profile, redirecting to onboarding')
+      // Redirect if no profile OR if dateOfBirth is missing (incomplete profile)
+      if ((!userProfile || !userProfile.dateOfBirth) && currentScreen !== 'onboarding' && currentScreen !== 'start') {
+        console.log('🔄 User authenticated but incomplete profile, redirecting to onboarding')
         setCurrentScreen('onboarding')
       }
     }
@@ -64,16 +65,16 @@ export default function Home() {
       const urlParams = new URLSearchParams(window.location.search)
       const paymentStatus = urlParams.get('payment')
       const orderId = urlParams.get('order_id')
-      
+
       if (paymentStatus && orderId) {
         // Clean up URL immediately to prevent issues
         const newUrl = window.location.pathname
         window.history.replaceState({}, '', newUrl)
-        
+
         if (paymentStatus === 'success') {
           // Payment successful - verify payment and update wallet
           console.log('✅ Payment successful, verifying...', orderId)
-          
+
           // Get stored payment details
           const storedPayment = sessionStorage.getItem('pending_payment')
           let paymentDetails = null
@@ -88,7 +89,7 @@ export default function Home() {
               console.error('Error parsing stored payment:', e)
             }
           }
-          
+
           // Verify payment and update wallet balance
           fetch('/api/cashfree/verify-payment', {
             method: 'POST',
@@ -136,14 +137,14 @@ export default function Home() {
     console.log('🎁 Starting free chat...')
     setFreeChatClaimed(true) // Mark free chat as claimed
     setCurrentScreen('chat')
-    
+
     // Format user details message
     if (userProfile) {
       const { addMessage, messages } = useStore.getState()
-      
+
       // Check if user details message already exists
       const hasUserDetails = messages.some(msg => msg.id && msg.id.startsWith('user-details-'))
-      
+
       if (hasUserDetails) {
         console.log('⚠️ User details already added, skipping to chat start...')
         // Just start the timer and skip adding messages again
@@ -151,13 +152,18 @@ export default function Home() {
         setFreeChatStartTime(Date.now())
         return
       }
-      
+
+      if (!userProfile.dateOfBirth) {
+        console.error('Date of birth missing for free chat')
+        return
+      }
+
       const birthDate = new Date(userProfile.dateOfBirth)
       const day = birthDate.getDate().toString().padStart(2, '0')
       const month = birthDate.toLocaleDateString('en-US', { month: 'long' })
       const year = birthDate.getFullYear()
       const formattedDOB = `${day}-${month}-${year}`
-      
+
       const userDetailsMessage = `Hi,
 Below are my details:
 Name: ${userProfile.name}
@@ -173,7 +179,7 @@ Place of Birth: Not specified`
         content: userDetailsMessage,
         timestamp: Date.now(),
       })
-      
+
       // Wait a bit, then add automated messages
       setTimeout(() => {
         addMessage({
@@ -183,7 +189,7 @@ Place of Birth: Not specified`
           timestamp: Date.now(),
         })
       }, 500)
-      
+
       setTimeout(() => {
         addMessage({
           id: `joining-${Date.now()}`,
@@ -192,7 +198,7 @@ Place of Birth: Not specified`
           timestamp: Date.now(),
         })
       }, 1000)
-      
+
       setTimeout(() => {
         addMessage({
           id: `share-question-${Date.now()}`,
@@ -201,7 +207,7 @@ Place of Birth: Not specified`
           timestamp: Date.now(),
         })
       }, 1500)
-      
+
       setTimeout(() => {
         const joinedMessage = {
           id: `joined-${Date.now()}`,
@@ -210,7 +216,7 @@ Place of Birth: Not specified`
           timestamp: Date.now(),
         }
         addMessage(joinedMessage)
-        
+
         // Save system message to database
         fetch('/api/messages/save', {
           method: 'POST',
@@ -219,12 +225,12 @@ Place of Birth: Not specified`
         }).catch(error => {
           console.error('Error saving system message to database:', error)
         })
-        
+
         // Now start the free chat timer
         setFreeChatActive(true)
         setFreeChatStartTime(Date.now())
       }, 2500)
-      
+
       // Astrologer greeting in Hindi
       setTimeout(() => {
         addMessage({

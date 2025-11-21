@@ -12,7 +12,7 @@ export interface Message {
 
 export interface UserProfile {
   name: string
-  dateOfBirth: string
+  dateOfBirth?: string
   birthTime?: string
   gender?: string
   languages: ('english' | 'hindi' | 'punjabi')[]
@@ -44,6 +44,8 @@ interface Store {
   dailyHoroscope: DailyHoroscopePayload | null
   dailyHoroscopeDate: string | null
   dailyHoroscopeCache: Record<string, DailyHoroscopePayload>
+  incomingCall: { callerId: string; callerName: string } | null
+  setIncomingCall: (call: { callerId: string; callerName: string } | null) => void
   setUserProfile: (profile: UserProfile) => void
   addMessage: (message: Message) => void
   setFreeReadingUsed: (used: boolean) => void
@@ -80,10 +82,12 @@ export const useStore = create<Store>()(
       dailyHoroscope: null,
       dailyHoroscopeDate: null,
       dailyHoroscopeCache: {},
-      setUserProfile: (profile) => set((state) => ({ 
-        userProfile: profile, 
+      incomingCall: null,
+      setIncomingCall: (call) => set({ incomingCall: call }),
+      setUserProfile: (profile) => set((state) => ({
+        userProfile: profile,
         // Show free chat option only if not claimed yet
-        currentScreen: state.freeChatClaimed ? 'home' : 'free-chat-option' 
+        currentScreen: state.freeChatClaimed ? 'home' : 'free-chat-option'
       })),
       addMessage: (message) =>
         set((state) => ({ messages: [...state.messages, message] })),
@@ -127,25 +131,66 @@ export const useStore = create<Store>()(
           dailyHoroscope: null,
           dailyHoroscopeDate: null,
           dailyHoroscopeCache: {},
+          incomingCall: null,
         }),
       syncFromDatabase: async () => {
         try {
           // Load user profile from database
-          const userResponse = await fetch('/api/users/get')
+          const userResponse = await fetch('/api/users/get', {
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          })
           if (userResponse.ok) {
             const userData = await userResponse.json()
             if (userData.success && userData.user) {
               set({ userProfile: userData.user })
             }
+          } else {
+            console.warn('Failed to sync user profile:', userResponse.status, userResponse.statusText)
           }
 
           // Load messages from database
-          const messagesResponse = await fetch('/api/messages/get')
+          const messagesResponse = await fetch('/api/messages/get', {
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          })
           if (messagesResponse.ok) {
             const messagesData = await messagesResponse.json()
             if (messagesData.success && messagesData.messages) {
-              set({ messages: messagesData.messages })
+              // Merge database messages with local messages to avoid losing unsaved messages
+              set((state) => {
+                const dbMessages = messagesData.messages || []
+                const localMessages = state.messages || []
+                
+                // Create a map of existing messages by ID to avoid duplicates
+                const messageMap = new Map<string, Message>()
+                
+                // First, add all database messages
+                dbMessages.forEach((msg: Message) => {
+                  messageMap.set(msg.id, msg)
+                })
+                
+                // Then, add local messages that aren't in the database (newer/unsaved messages)
+                localMessages.forEach((msg: Message) => {
+                  if (!messageMap.has(msg.id)) {
+                    messageMap.set(msg.id, msg)
+                  }
+                })
+                
+                // Convert map back to array and sort by timestamp
+                const mergedMessages = Array.from(messageMap.values()).sort(
+                  (a, b) => a.timestamp - b.timestamp
+                )
+                
+                return { messages: mergedMessages }
+              })
             }
+          } else {
+            console.warn('Failed to sync messages:', messagesResponse.status, messagesResponse.statusText)
           }
         } catch (error) {
           console.error('Error syncing from database:', error)

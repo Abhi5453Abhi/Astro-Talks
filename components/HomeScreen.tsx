@@ -1,11 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { useSession } from 'next-auth/react'
 import { useStore } from '@/lib/store'
 import AuthButton from '@/components/AuthButton'
+import RealCall from '@/components/RealCall'
 
 export default function HomeScreen() {
+  const { data: session } = useSession()
   const {
     userProfile,
     walletBalance,
@@ -14,6 +17,56 @@ export default function HomeScreen() {
     setCurrentScreen,
   } = useStore()
   const [searchQuery, setSearchQuery] = useState('')
+  const [showCall, setShowCall] = useState(false)
+  const [astrologerUserId, setAstrologerUserId] = useState<string | null>(null)
+  const [callError, setCallError] = useState<string | null>(null)
+  const [isLoadingAstrologer, setIsLoadingAstrologer] = useState(false)
+  
+  // Astrologer email - hardcoded
+  const ASTROLOGER_EMAIL = 'raghavshastari@gmail.com'
+  
+  // Fetch astrologer user ID from email - lazy load only when needed
+  const fetchAstrologerUserId = async () => {
+    // If already loaded or currently loading, don't fetch again
+    if (astrologerUserId || isLoadingAstrologer) {
+      return astrologerUserId
+    }
+    
+    setIsLoadingAstrologer(true)
+    setCallError(null)
+    
+    try {
+      const response = await fetch(`/api/users/get-by-email?email=${encodeURIComponent(ASTROLOGER_EMAIL)}`)
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.warn('Astrologer user not found in database:', ASTROLOGER_EMAIL)
+          setCallError('Astrologer not found. Please contact support.')
+        } else {
+          console.error('Failed to fetch astrologer user ID:', response.status, response.statusText)
+          setCallError('Unable to connect to astrologer. Please try again later.')
+        }
+        return null
+      }
+      
+      const data = await response.json()
+      
+      if (data.success && data.userId) {
+        setAstrologerUserId(data.userId)
+        return data.userId
+      } else {
+        console.error('Failed to fetch astrologer user ID:', data.error)
+        setCallError('Astrologer not found. Please contact support.')
+        return null
+      }
+    } catch (error) {
+      console.error('Error fetching astrologer user ID:', error)
+      setCallError('Unable to connect to astrologer. Please try again later.')
+      return null
+    } finally {
+      setIsLoadingAstrologer(false)
+    }
+  }
 
   const isHomeContext =
     currentScreen === 'home' ||
@@ -41,8 +94,36 @@ export default function HomeScreen() {
     }
   }
 
-  const handleCallWithAstrologer = () => {
-    console.log('Call feature coming soon!')
+  const handleCallWithAstrologer = async () => {
+    // Check if user is logged in
+    if (!session?.user?.id) {
+      alert('Please login to make a call')
+      return
+    }
+    
+    // Lazy load astrologer user ID if not already loaded
+    let userId = astrologerUserId
+    if (!userId) {
+      userId = await fetchAstrologerUserId()
+    }
+    
+    // Check if astrologer user ID is available
+    if (!userId) {
+      if (callError) {
+        alert(callError)
+      } else {
+        alert('Unable to connect to astrologer. Please try again later.')
+      }
+      return
+    }
+    
+    // Check wallet balance (optional - you can set minimum balance requirement)
+    // if (walletBalance < 200) {
+    //   alert('Insufficient balance. Minimum ₹200 required for calling.')
+    //   return
+    // }
+    
+    setShowCall(true)
   }
 
   return (
@@ -229,6 +310,15 @@ export default function HomeScreen() {
           }
         }
       `}</style>
+
+      {/* Real Call Component */}
+      {showCall && astrologerUserId && (
+        <RealCall
+          isOpen={showCall}
+          onClose={() => setShowCall(false)}
+          astrologerUserId={astrologerUserId}
+        />
+      )}
     </div>
   )
 }

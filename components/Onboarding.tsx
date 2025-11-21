@@ -29,7 +29,7 @@ export default function Onboarding() {
   const periodRef = useRef<HTMLDivElement>(null)
 
   const { setUserProfile, setDailyHoroscope, setDailyHoroscopeForSign } = useStore()
-  const { data: session } = useSession()
+  const { data: session, status: sessionStatus } = useSession()
   
   // Pre-fill name from Google sign-in, but allow user to edit it
   useEffect(() => {
@@ -37,6 +37,16 @@ export default function Onboarding() {
       setName(session.user.name)
     }
   }, [session?.user?.name]) // Removed 'name' from dependencies to allow editing
+  
+  // Debug: Log session status
+  useEffect(() => {
+    console.log('Onboarding session status:', {
+      status: sessionStatus,
+      hasSession: !!session,
+      userId: session?.user?.id,
+      email: session?.user?.email
+    })
+  }, [sessionStatus, session])
 
   // Debug: Track step changes
   useEffect(() => {
@@ -463,22 +473,43 @@ export default function Onboarding() {
 
     setUserProfile(profile)
     
-    // Save to database
-    try {
-      const response = await fetch('/api/users/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profile),
+    // Save to database (only if user is authenticated)
+    if (session?.user?.id && sessionStatus === 'authenticated') {
+      console.log('💾 Attempting to save profile to database...', {
+        userId: session.user.id,
+        email: session.user.email,
+        profileName: profile.name
       })
       
-      if (response.ok) {
-        console.log('✅ User profile saved to database successfully!')
-      } else {
-        console.error('Failed to save user profile to database:', await response.json())
+      try {
+        const response = await fetch('/api/users/save', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(profile),
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          console.log('✅ User profile saved to database successfully!', data)
+        } else {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+          console.error('❌ Failed to save user profile to database:', errorData)
+          console.error('Response status:', response.status, response.statusText)
+        }
+      } catch (error) {
+        console.error('❌ Error saving user profile to database:', error)
+        // Continue even if database save fails - data is in localStorage
       }
-    } catch (error) {
-      console.error('Error saving user profile to database:', error)
-      // Continue even if database save fails - data is in localStorage
+    } else {
+      console.warn('⚠️ User not authenticated, skipping database save.', {
+        hasSession: !!session,
+        sessionStatus,
+        userId: session?.user?.id
+      })
+      console.warn('Profile saved to localStorage only. User should log in first.')
     }
     
     console.log('✅ User profile saved successfully!')

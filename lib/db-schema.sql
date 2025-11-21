@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY, -- NextAuth user ID
   email TEXT UNIQUE,
   name TEXT NOT NULL,
-  date_of_birth DATE NOT NULL,
+  date_of_birth DATE,
   birth_time TEXT,
   gender TEXT,
   languages TEXT[], -- Array of languages: ['english', 'hindi', 'punjabi']
