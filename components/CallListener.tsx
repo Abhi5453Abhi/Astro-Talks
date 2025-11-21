@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useStore } from '@/lib/store'
-import { io, Socket } from 'socket.io-client'
+import io from 'socket.io-client'
+import type { Socket } from 'socket.io-client'
 import IncomingCall from './IncomingCall'
 import { SIGNALING_SERVER_URL } from '@/lib/socket-config'
 
