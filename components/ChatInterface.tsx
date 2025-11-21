@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
+import { useSession } from 'next-auth/react'
 import { useStore } from '@/lib/store'
 import Message from './Message'
 import TypingIndicator from './TypingIndicator'
@@ -13,12 +14,12 @@ import VoiceCall from './VideoCall'
 import { ASTROLOGER } from '@/lib/astrologer'
 
 export default function ChatInterface() {
-  const { 
-    userProfile, 
-    messages, 
-    addMessage, 
-    freeReadingUsed, 
-    isPaidUser, 
+  const {
+    userProfile,
+    messages,
+    addMessage,
+    freeReadingUsed,
+    isPaidUser,
     setFreeReadingUsed,
     freeChatActive,
     freeChatStartTime,
@@ -30,17 +31,18 @@ export default function ChatInterface() {
     syncFromDatabase,
     syncMessagesToDatabase
   } = useStore()
+  const { status } = useSession()
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [showCashbackOffer, setShowCashbackOffer] = useState(false)
   const [showVideoCall, setShowVideoCall] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState(120) // 2 minutes
-  
+
   // Minimum balance required: 10 minutes at ₹20/min = ₹200
   const MINIMUM_BALANCE = 200
   const hasInsufficientBalance = walletBalance < MINIMUM_BALANCE && !freeChatActive && !isPaidUser
-  
+
   // Check if chat is blocked (free chat expired or insufficient balance)
   const isChatBlocked = (freeChatExpired && !isPaidUser) || hasInsufficientBalance
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -55,15 +57,15 @@ export default function ChatInterface() {
   const generateUrgencyMessage = async () => {
     if (urgencyMessageSentRef.current) return
     urgencyMessageSentRef.current = true
-    
+
     console.log('⚠️ Generating urgency message at 20 seconds...')
-    
+
     // Collect all user questions
     const userQuestions = messages
       .filter(msg => msg.role === 'user' && !msg.id?.startsWith('user-details-'))
       .map(msg => msg.content)
       .join('; ')
-    
+
     try {
       const response = await fetch('/api/urgency-message', {
         method: 'POST',
@@ -73,13 +75,13 @@ export default function ChatInterface() {
           userProfile,
         }),
       })
-      
+
       const data = await response.json()
-      
+
       if (data.message) {
         // Split urgency message by comma and send as 2 separate messages
         const parts = data.message.split(',').map((part: string) => part.trim()).filter((part: string) => part.length > 0)
-        
+
         // Add first part immediately
         if (parts[0]) {
           addMessage({
@@ -89,7 +91,7 @@ export default function ChatInterface() {
             timestamp: Date.now(),
           })
         }
-        
+
         // Add second part after 1.5s
         if (parts[1]) {
           setTimeout(() => {
@@ -114,14 +116,14 @@ export default function ChatInterface() {
     const interval = setInterval(() => {
       const elapsed = Math.floor((Date.now() - freeChatStartTime) / 1000)
       const remaining = Math.max(0, 120 - elapsed) // 2 minutes
-      
+
       setTimeRemaining(remaining)
-      
+
       // Send urgency message at 20 seconds
       if (remaining === 20 && !urgencyMessageSentRef.current) {
         generateUrgencyMessage()
       }
-      
+
       if (remaining === 0) {
         console.log('⏰ Free chat time expired!')
         setFreeChatActive(false)
@@ -164,7 +166,7 @@ export default function ChatInterface() {
   const startFollowUpQuestions = () => {
     console.log('🎯 Starting follow-up questions...')
     clearFollowUpTimeouts() // Clear any existing timeouts first
-    
+
     const timeout1 = setTimeout(() => {
       addMessage({
         id: `followup-1-${Date.now()}`,
@@ -173,7 +175,7 @@ export default function ChatInterface() {
         timestamp: Date.now(),
       })
     }, 3000)
-    
+
     const timeout2 = setTimeout(() => {
       addMessage({
         id: `followup-2-${Date.now()}`,
@@ -182,7 +184,7 @@ export default function ChatInterface() {
         timestamp: Date.now(),
       })
     }, 9000)
-    
+
     const timeout3 = setTimeout(() => {
       addMessage({
         id: `followup-3-${Date.now()}`,
@@ -191,30 +193,30 @@ export default function ChatInterface() {
         timestamp: Date.now(),
       })
     }, 12000)
-    
+
     followUpTimeoutsRef.current = [timeout1, timeout2, timeout3]
   }
 
   // Start follow-ups when greeting message appears (but only if user hasn't replied yet)
   useEffect(() => {
     if (!freeChatActive || hasStartedFollowUpsRef.current || userHasRepliedRef.current) return
-    
+
     // Check if greeting message exists
     const hasGreeting = messages.some(msg => msg.id && msg.id.startsWith('greeting-'))
-    
+
     // Check if user has sent any messages (excluding the initial user-details message)
-    const userMessages = messages.filter(msg => 
-      msg.role === 'user' && 
-      msg.id && 
+    const userMessages = messages.filter(msg =>
+      msg.role === 'user' &&
+      msg.id &&
       !msg.id.startsWith('user-details-')
     )
-    
+
     if (userMessages.length > 0) {
       console.log('🚫 User has already sent a message, not starting follow-ups')
       userHasRepliedRef.current = true
       return
     }
-    
+
     if (hasGreeting && !hasStartedFollowUpsRef.current && !userHasRepliedRef.current) {
       console.log('👋 Greeting found, starting follow-ups...')
       hasStartedFollowUpsRef.current = true
@@ -245,13 +247,15 @@ export default function ChatInterface() {
   useEffect(() => {
     const loadFromDatabase = async () => {
       try {
-        await syncFromDatabase()
+        if (status === 'authenticated') {
+          await syncFromDatabase()
+        }
       } catch (error) {
         console.error('Error loading from database:', error)
       }
     }
     loadFromDatabase()
-  }, [syncFromDatabase])
+  }, [syncFromDatabase, status])
 
   // Check balance when entering chat interface
   useEffect(() => {
@@ -267,7 +271,7 @@ export default function ChatInterface() {
   // Initial greeting - only if no messages exist and not in free chat mode
   useEffect(() => {
     console.log('Greeting check:', { hasGreeted: hasGreetedRef.current, userProfile: !!userProfile, messagesLength: messages.length, freeChatActive })
-    
+
     if (hasGreetedRef.current) {
       console.log('Already greeted, skipping')
       return
@@ -290,8 +294,9 @@ export default function ChatInterface() {
 
     console.log('Sending greeting...')
     hasGreetedRef.current = true
-    
+
     // Calculate age from DOB
+    if (!userProfile.dateOfBirth) return
     const birthDate = new Date(userProfile.dateOfBirth)
     const today = new Date()
     const age = today.getFullYear() - birthDate.getFullYear()
@@ -308,7 +313,7 @@ export default function ChatInterface() {
 
     // Show typing first
     setIsTyping(true)
-    
+
     const timeoutId = setTimeout(() => {
       console.log('Adding greeting message')
       addMessage({
@@ -330,19 +335,19 @@ export default function ChatInterface() {
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value
     setInput(value)
-    
+
     // Only manage follow-ups if free chat is active, follow-ups have started, and user hasn't replied yet
     if (freeChatActive && hasStartedFollowUpsRef.current && !userHasRepliedRef.current) {
       console.log('⌨️ User is typing, clearing follow-up timeouts...')
-      
+
       // Clear follow-up timeouts when user starts typing
       clearFollowUpTimeouts()
-      
+
       // Set inactivity timeout to restart follow-ups if user stops typing for 8 seconds
       if (inactivityTimeoutRef.current) {
         clearTimeout(inactivityTimeoutRef.current)
       }
-      
+
       inactivityTimeoutRef.current = setTimeout(() => {
         // Check if user still hasn't sent a message
         if (value.trim().length > 0 && !userHasRepliedRef.current) {
@@ -371,7 +376,7 @@ export default function ChatInterface() {
     }
 
     addMessage(userMessage)
-    
+
     // Save message to database
     try {
       await fetch('/api/messages/save', {
@@ -382,7 +387,7 @@ export default function ChatInterface() {
     } catch (error) {
       console.error('Error saving message to database:', error)
     }
-    
+
     setInput('')
     setIsTyping(true)
 
@@ -391,18 +396,21 @@ export default function ChatInterface() {
 
     setTimeout(async () => {
       try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [...messages, userMessage],
-          userProfile,
-          isPaidUser,
-          freeReadingUsed,
-          freeChatActive,
-          timeRemaining,
-        }),
-      })
+        // Get current messages from store to ensure we have the latest state
+        const currentMessages = useStore.getState().messages
+        
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: currentMessages,
+            userProfile,
+            isPaidUser,
+            freeReadingUsed,
+            freeChatActive,
+            timeRemaining,
+          }),
+        })
 
         if (!response.ok) {
           throw new Error(`API error: ${response.status}`)
@@ -417,16 +425,18 @@ export default function ChatInterface() {
         // Payment modal is only shown when timer expires or user clicks "Unlock Deeper Insights"
         // Not triggered by API responses
 
-        if (!freeReadingUsed && messages.length >= 4) {
+        // Get current messages count from store
+        const currentMessagesCount = useStore.getState().messages.length
+        if (!freeReadingUsed && currentMessagesCount >= 4) {
           setFreeReadingUsed(true)
         }
 
         // Split response by comma and send as separate messages with delays
         const fullResponse = data.message || "The cosmic energies are unclear... please try again."
         const parts = fullResponse.split(',').map((part: string) => part.trim()).filter((part: string) => part.length > 0)
-        
+
         console.log('📨 AI Response parts:', parts.length, parts)
-        
+
         // Add first part immediately
         const assistantMessages: Array<{
           id: string
@@ -446,7 +456,7 @@ export default function ChatInterface() {
           addMessage(firstMessage)
           assistantMessages.push(firstMessage)
         }
-        
+
         // Add remaining parts with 1.5s delays
         parts.slice(1).forEach((part: string, index: number) => {
           setTimeout(() => {
@@ -459,7 +469,7 @@ export default function ChatInterface() {
             }
             addMessage(message)
             assistantMessages.push(message)
-            
+
             // Save all assistant messages to database after last one
             if (index === parts.length - 2) {
               setTimeout(async () => {
@@ -476,7 +486,7 @@ export default function ChatInterface() {
             }
           }, (index + 1) * 1500)
         })
-        
+
         // Save assistant messages to database
         if (assistantMessages.length > 0) {
           setTimeout(async () => {
@@ -605,34 +615,32 @@ export default function ChatInterface() {
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3">
             {/* Wallet Balance */}
             {!freeChatActive && !isPaidUser && (
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold ${
-                  walletBalance < MINIMUM_BALANCE
-                    ? 'bg-red-100 text-red-700 border border-red-300'
-                    : 'bg-green-100 text-green-700 border border-green-300'
-                }`}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold ${walletBalance < MINIMUM_BALANCE
+                  ? 'bg-red-100 text-red-700 border border-red-300'
+                  : 'bg-green-100 text-green-700 border border-green-300'
+                  }`}
               >
                 <span>💰</span>
                 <span className="tabular-nums">₹{walletBalance}</span>
               </motion.div>
             )}
-            
+
             {/* Free Chat Timer */}
             {freeChatActive && !isPaidUser && (
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold ${
-                  timeRemaining <= 30 
-                    ? 'bg-red-100 text-red-700 border border-red-300 animate-pulse' 
-                    : 'bg-yellow-100 text-yellow-700 border border-yellow-300'
-                }`}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold ${timeRemaining <= 30
+                  ? 'bg-red-100 text-red-700 border border-red-300 animate-pulse'
+                  : 'bg-yellow-100 text-yellow-700 border border-yellow-300'
+                  }`}
               >
                 <span>⏱️</span>
                 <span className="tabular-nums">{formatTime(timeRemaining)}</span>
@@ -683,7 +691,7 @@ export default function ChatInterface() {
       {/* Continue Chat Banner */}
       <AnimatePresence>
         {isChatBlocked && userProfile && (
-          <ContinueChatBanner 
+          <ContinueChatBanner
             userName={userProfile.name}
             onContinueChat={handleContinueChatClick}
           />
