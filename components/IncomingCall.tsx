@@ -2,12 +2,24 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useSession } from 'next-auth/react'
+// Authentication feature commented out
+// import { useSession } from 'next-auth/react'
 import { useStore } from '@/lib/store'
 import io from 'socket.io-client'
 import { SIGNALING_SERVER_URL } from '@/lib/socket-config'
 
 type Socket = ReturnType<typeof io>
+
+// Generate or get user ID from localStorage (authentication feature commented out)
+const getOrCreateUserId = (): string => {
+  if (typeof window === 'undefined') return 'anonymous'
+  let userId = localStorage.getItem('user_id')
+  if (!userId) {
+    userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    localStorage.setItem('user_id', userId)
+  }
+  return userId
+}
 
 interface IncomingCallProps {
   isOpen: boolean
@@ -24,9 +36,11 @@ export default function IncomingCall({
   callerId,
   callerName
 }: IncomingCallProps) {
-  const { data: session } = useSession()
+  // Authentication feature commented out
+  // const { data: session } = useSession()
   const { userProfile } = useStore()
-  const userId = session?.user?.id || 'anonymous'
+  // Use generated user ID instead of session
+  const userId = getOrCreateUserId()
   const [isCallActive, setIsCallActive] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const [callDuration, setCallDuration] = useState(0)

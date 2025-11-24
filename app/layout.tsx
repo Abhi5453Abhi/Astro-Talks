@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import AuthProvider from '@/components/providers/AuthProvider'
+// Authentication feature commented out
+// import AuthProvider from '@/components/providers/AuthProvider'
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
 import CallListener from '@/components/CallListener'
 
@@ -32,11 +33,12 @@ export default function RootLayout({
         <script src="https://checkout.razorpay.com/v1/checkout.js" async></script>
       </head>
       <body className="bg-gradient-to-br from-slate-900 via-amber-900 to-slate-900 min-h-screen">
-        <AuthProvider>
+        {/* Authentication feature commented out - AuthProvider removed */}
+        {/* <AuthProvider> */}
           <ServiceWorkerRegistration />
           <CallListener />
           {children}
-        </AuthProvider>
+        {/* </AuthProvider> */}
       </body>
     </html>
   )

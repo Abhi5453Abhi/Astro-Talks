@@ -2,24 +2,29 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useSession } from 'next-auth/react'
+// Authentication feature commented out
+// import { useSession } from 'next-auth/react'
 import { useStore } from '@/lib/store'
-import GoogleSignInButton from '@/components/GoogleSignInButton'
+// Google sign-in feature commented out
+// import GoogleSignInButton from '@/components/GoogleSignInButton'
 
 export default function StartScreen() {
   const { setCurrentScreen } = useStore()
-  const { status } = useSession()
-  const [showSignIn, setShowSignIn] = useState(false)
+  // Authentication feature commented out
+  // const { status } = useSession()
+  // const [showSignIn, setShowSignIn] = useState(false)
 
   const handleStartNow = () => {
-    setShowSignIn(true)
+    // Proceed directly to onboarding without authentication
+    setCurrentScreen('onboarding')
   }
 
-  useEffect(() => {
-    if (status === 'authenticated') {
-      setCurrentScreen('onboarding')
-    }
-  }, [status, setCurrentScreen])
+  // Authentication feature commented out - no auth checks needed
+  // useEffect(() => {
+  //   if (status === 'authenticated') {
+  //     setCurrentScreen('onboarding')
+  //   }
+  // }, [status, setCurrentScreen])
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden flex flex-col items-center p-6 pt-28 pb-28">
@@ -80,7 +85,22 @@ export default function StartScreen() {
         </motion.p>
 
         <AnimatePresence mode="wait">
-          {!showSignIn ? (
+          {/* Authentication feature commented out - always show start button */}
+          <motion.button
+            key="start-button"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.4 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleStartNow}
+            className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-slate-900 font-bold text-lg sm:text-xl px-12 sm:px-16 py-4 sm:py-5 rounded-full shadow-2xl shadow-yellow-500/50 hover:shadow-yellow-500/70 transition-all"
+          >
+            Start Now
+          </motion.button>
+          {/* Authentication feature commented out - sign-in flow removed */}
+          {/* {!showSignIn ? (
             <motion.button
               key="start-button"
               initial={{ opacity: 0, scale: 0.8 }}
@@ -96,29 +116,28 @@ export default function StartScreen() {
             </motion.button>
           ) : (
             <motion.div
-              key="google-sign-in"
+              key="sign-in-disabled"
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 16 }}
               exit={{ opacity: 0, y: 24 }}
               transition={{ duration: 0.4 }}
-              className="mt-4"
+              className="mt-4 text-white/70 text-sm"
             >
-              <GoogleSignInButton />
+              Sign-in is currently disabled
             </motion.div>
-          )}
+          )} */}
+          {/* Footer Text */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.9, duration: 0.6 }}
+            className="relative z-10 mt-4 text-center space-y-2"
+          >
+            <p className="text-white text-sm sm:text-base">Trusted by 2 lakh+ families</p>
+            <p className="text-white/80 text-sm sm:text-base">24/7 Pandit Consultation</p>
+          </motion.div>
         </AnimatePresence>
       </div>
-
-      {/* Footer Text */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.9, duration: 0.6 }}
-        className="relative z-10 mt-12 text-center space-y-2"
-      >
-        <p className="text-white text-sm sm:text-base">Trusted by 2 lakh+ families</p>
-        <p className="text-white/80 text-sm sm:text-base">24/7 Pandit Consultation</p>
-      </motion.div>
 
       <style jsx>{`
         @keyframes twinkle {

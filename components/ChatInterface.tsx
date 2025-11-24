@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
-import { useSession } from 'next-auth/react'
+// Authentication feature commented out
+// import { useSession } from 'next-auth/react'
 import { useStore } from '@/lib/store'
 import Message from './Message'
 import TypingIndicator from './TypingIndicator'
@@ -31,7 +32,8 @@ export default function ChatInterface() {
     syncFromDatabase,
     syncMessagesToDatabase
   } = useStore()
-  const { status } = useSession()
+  // Authentication feature commented out
+  // const { status } = useSession()
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
@@ -243,19 +245,19 @@ export default function ChatInterface() {
     }
   }, [freeChatActive])
 
+  // Authentication feature commented out - load messages without auth requirement
   // Load messages from database on mount
   useEffect(() => {
     const loadFromDatabase = async () => {
       try {
-        if (status === 'authenticated') {
-          await syncFromDatabase()
-        }
+        // Authentication check removed - always sync from database
+        await syncFromDatabase()
       } catch (error) {
         console.error('Error loading from database:', error)
       }
     }
     loadFromDatabase()
-  }, [syncFromDatabase, status])
+  }, [syncFromDatabase])
 
   // Check balance when entering chat interface
   useEffect(() => {

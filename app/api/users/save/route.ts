@@ -8,12 +8,12 @@ export async function POST(request: NextRequest) {
     const cookies = request.headers.get('cookie') || ''
     const hasCookies = cookies.length > 0
     const cookieNames = cookies ? cookies.split(';').map(c => c.split('=')[0].trim()) : []
-    
+
     console.log('🔍 [401 DEBUG] /api/users/save - Request received')
     console.log('  - Has cookies:', hasCookies)
     console.log('  - Cookie names:', cookieNames)
     console.log('  - NEXTAUTH_SECRET set:', !!process.env.NEXTAUTH_SECRET)
-    
+
     // Use getToken to read JWT directly from cookies - more reliable in App Router
     let token
     try {
@@ -21,18 +21,18 @@ export async function POST(request: NextRequest) {
       if (cookieValue && hasCookies) {
         console.log('  - Cookie value preview:', cookieValue.substring(0, 50) + '...')
       }
-      
+
       // Explicitly specify cookie name for getToken
-      const cookieName = process.env.NODE_ENV === 'production' 
+      const cookieName = process.env.NODE_ENV === 'production'
         ? '__Secure-next-auth.session-token'
         : 'next-auth.session-token'
-      
-      token = await getToken({ 
+
+      token = await getToken({
         req: request,
         secret: process.env.NEXTAUTH_SECRET,
         cookieName: cookieName
       })
-      
+
       if (!token && hasCookies && cookieNames.includes('next-auth.session-token')) {
         console.error('  - ⚠️ CRITICAL: Cookie exists but getToken returned null')
       }
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       console.error('  - ❌ Error extracting token:', tokenError?.message || tokenError)
       console.error('  - Error code:', tokenError?.code)
     }
-    
+
     console.log('  - Token extracted:', !!token)
     if (token) {
       console.log('  - Token has sub:', !!token.sub)
@@ -53,28 +53,25 @@ export async function POST(request: NextRequest) {
         console.log('  - ⚠️ Cookies present but token extraction failed')
       }
     }
-    
+
+    // If no token, create a guest user
     if (!token?.sub) {
-      console.error('❌ [401 ERROR] /api/users/save - Unauthorized')
-      console.error('  - Reason: Token missing or token.sub is missing')
-      console.error('  - Token exists:', !!token)
-      console.error('  - Token.sub exists:', !!token?.sub)
-      console.error('  - Available cookies:', cookieNames.join(', ') || 'none')
-      
-      return NextResponse.json(
-        { 
-          error: 'Unauthorized', 
-          message: 'Please ensure you are logged in',
-          debug: {
-            hasToken: !!token,
-            hasSub: !!token?.sub,
-            cookieCount: cookieNames.length,
-            cookieNames: cookieNames
-          }
-        },
-        { status: 401 }
-      )
+      console.log('⚠️ [AUTH INFO] No session token found - creating guest user')
+
+      // Generate a random UUID for guest users
+      // We'll use crypto.randomUUID() which is available in Node.js environment
+      const crypto = require('crypto')
+      const guestId = crypto.randomUUID()
+
+      token = {
+        sub: guestId,
+        email: `guest_${Date.now()}@example.com`,
+        name: 'Guest User'
+      }
+
+      console.log('  - Generated guest ID:', guestId)
     }
+
 
     const userId = token.sub
     const userEmail = token.email as string | undefined

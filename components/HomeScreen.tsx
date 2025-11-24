@@ -2,13 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { useSession } from 'next-auth/react'
+// Authentication feature commented out
+// import { useSession } from 'next-auth/react'
 import { useStore } from '@/lib/store'
-import AuthButton from '@/components/AuthButton'
+// Authentication feature commented out
+// import AuthButton from '@/components/AuthButton'
 import RealCall from '@/components/RealCall'
 
 export default function HomeScreen() {
-  const { data: session } = useSession()
+  // Authentication feature commented out
+  // const { data: session } = useSession()
   const {
     userProfile,
     walletBalance,
@@ -95,11 +98,11 @@ export default function HomeScreen() {
   }
 
   const handleCallWithAstrologer = async () => {
-    // Check if user is logged in
-    if (!session?.user?.id) {
-      alert('Please login to make a call')
-      return
-    }
+    // Authentication feature commented out - no login check needed
+    // if (!session?.user?.id) {
+    //   alert('Please login to make a call')
+    //   return
+    // }
     
     // Lazy load astrologer user ID if not already loaded
     let userId = astrologerUserId
@@ -159,14 +162,16 @@ export default function HomeScreen() {
           </button>
         </div>
 
-        <div className="hidden sm:block">
+        {/* Authentication feature commented out - AuthButton removed */}
+        {/* <div className="hidden sm:block">
           <AuthButton variant="ghost" />
-        </div>
+        </div> */}
       </div>
 
-      <div className="px-4 pt-3 sm:hidden relative z-10">
+      {/* Authentication feature commented out - AuthButton removed */}
+      {/* <div className="px-4 pt-3 sm:hidden relative z-10">
         <AuthButton variant="primary" />
-      </div>
+      </div> */}
 
       {/* Search Bar */}
       <div className="px-4 py-4 relative z-10">

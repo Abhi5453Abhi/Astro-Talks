@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useSession } from 'next-auth/react'
+// Authentication feature commented out
+// import { useSession } from 'next-auth/react'
 import { useStore } from '@/lib/store'
 import io from 'socket.io-client'
 import IncomingCall from './IncomingCall'
@@ -9,15 +10,28 @@ import { SIGNALING_SERVER_URL } from '@/lib/socket-config'
 
 type Socket = ReturnType<typeof io>
 
+// Generate or get user ID from localStorage (authentication feature commented out)
+const getOrCreateUserId = (): string => {
+  if (typeof window === 'undefined') return 'anonymous'
+  let userId = localStorage.getItem('user_id')
+  if (!userId) {
+    userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    localStorage.setItem('user_id', userId)
+  }
+  return userId
+}
+
 export default function CallListener() {
-  const { data: session } = useSession()
+  // Authentication feature commented out
+  // const { data: session } = useSession()
   const { userProfile, incomingCall, setIncomingCall } = useStore()
   const socketRef = useRef<Socket | null>(null)
   const [showIncomingCall, setShowIncomingCall] = useState(false)
-  const userId = session?.user?.id
+  // Use generated user ID instead of session
+  const userId = getOrCreateUserId()
 
   useEffect(() => {
-    if (!userId) return
+    if (!userId || userId === 'anonymous') return
 
     // Connect to signaling server - both users must use the same server
     const socket = io(SIGNALING_SERVER_URL, {

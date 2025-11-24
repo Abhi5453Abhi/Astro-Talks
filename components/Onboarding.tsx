@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useSession } from 'next-auth/react'
+// Authentication feature commented out
+// import { useSession } from 'next-auth/react'
 import { useStore } from '@/lib/store'
 import { getZodiacSign } from '@/lib/utils'
 import { ZODIAC_SIGNS } from '@/types/horoscope'
@@ -29,24 +30,26 @@ export default function Onboarding() {
   const periodRef = useRef<HTMLDivElement>(null)
 
   const { setUserProfile, setDailyHoroscope, setDailyHoroscopeForSign } = useStore()
-  const { data: session, status: sessionStatus } = useSession()
+  // Authentication feature commented out
+  // const { data: session, status: sessionStatus } = useSession()
   
-  // Pre-fill name from Google sign-in, but allow user to edit it
-  useEffect(() => {
-    if (session?.user?.name && !name) {
-      setName(session.user.name)
-    }
-  }, [session?.user?.name]) // Removed 'name' from dependencies to allow editing
+  // Authentication feature commented out - pre-fill name from Google sign-in
+  // useEffect(() => {
+  //   if (session?.user?.name && !name) {
+  //     setName(session.user.name)
+  //   }
+  // }, [session?.user?.name]) // Removed 'name' from dependencies to allow editing
   
+  // Authentication feature commented out - debug session logging removed
   // Debug: Log session status
-  useEffect(() => {
-    console.log('Onboarding session status:', {
-      status: sessionStatus,
-      hasSession: !!session,
-      userId: session?.user?.id,
-      email: session?.user?.email
-    })
-  }, [sessionStatus, session])
+  // useEffect(() => {
+  //   console.log('Onboarding session status:', {
+  //     status: sessionStatus,
+  //     hasSession: !!session,
+  //     userId: session?.user?.id,
+  //     email: session?.user?.email
+  //   })
+  // }, [sessionStatus, session])
 
   // Debug: Track step changes
   useEffect(() => {
@@ -473,44 +476,37 @@ export default function Onboarding() {
 
     setUserProfile(profile)
     
-    // Save to database (only if user is authenticated)
-    if (session?.user?.id && sessionStatus === 'authenticated') {
-      console.log('💾 Attempting to save profile to database...', {
-        userId: session.user.id,
-        email: session.user.email,
-        profileName: profile.name
+    // Authentication feature commented out - save to database without auth requirement
+    // Save to database (authentication check removed)
+    try {
+      const response = await fetch('/api/users/save', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(profile),
       })
       
-      try {
-        const response = await fetch('/api/users/save', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify(profile),
-        })
-        
-        if (response.ok) {
-          const data = await response.json()
-          console.log('✅ User profile saved to database successfully!', data)
-        } else {
-          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-          console.error('❌ Failed to save user profile to database:', errorData)
-          console.error('Response status:', response.status, response.statusText)
-        }
-      } catch (error) {
-        console.error('❌ Error saving user profile to database:', error)
-        // Continue even if database save fails - data is in localStorage
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ User profile saved to database successfully!', data)
+      } else {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('❌ Failed to save user profile to database:', errorData)
+        console.error('Response status:', response.status, response.statusText)
       }
-    } else {
-      console.warn('⚠️ User not authenticated, skipping database save.', {
-        hasSession: !!session,
-        sessionStatus,
-        userId: session?.user?.id
-      })
-      console.warn('Profile saved to localStorage only. User should log in first.')
+    } catch (error) {
+      console.error('❌ Error saving user profile to database:', error)
+      // Continue even if database save fails - data is in localStorage
     }
+    
+    // Authentication feature commented out - original auth check removed
+    // if (session?.user?.id && sessionStatus === 'authenticated') {
+    //   ...
+    // } else {
+    //   console.warn('⚠️ User not authenticated, skipping database save.')
+    // }
     
     console.log('✅ User profile saved successfully!')
     setIsLoading(false)
@@ -607,11 +603,12 @@ export default function Onboarding() {
               className="w-full px-6 py-5 bg-slate-800/40 backdrop-blur-sm border border-slate-700/30 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500/50 focus:ring-2 focus:ring-yellow-500/20 transition-all duration-300 text-lg font-light tracking-wide"
               autoFocus
             />
-            {session?.user?.name && name === session.user.name && (
+            {/* Authentication feature commented out - session check removed */}
+            {/* {session?.user?.name && name === session.user.name && (
               <p className="text-xs text-gray-400 mt-2 text-center">
                 You can edit this name if you'd like
               </p>
-            )}
+            )} */}
           </div>
           <div className="flex gap-4 pt-2">
             <motion.button

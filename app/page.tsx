@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { useSession } from 'next-auth/react'
+// Authentication feature commented out
+// import { useSession } from 'next-auth/react'
 import Onboarding from '@/components/Onboarding'
 import ChatInterface from '@/components/ChatInterface'
 import FreeChatOption from '@/components/FreeChatOption'
@@ -14,33 +15,35 @@ import { ASTROLOGER } from '@/lib/astrologer'
 
 export default function Home() {
   const { userProfile, currentScreen, freeChatClaimed, setCurrentScreen, setFreeChatActive, setFreeChatStartTime, setFreeChatClaimed, syncFromDatabase } = useStore()
-  const { status } = useSession()
+  // Authentication feature commented out
+  // const { status } = useSession()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Load user data from database on mount
+  // Authentication feature commented out - no auth checks needed
+  // Load user data from database on mount (without auth requirement)
   useEffect(() => {
-    if (mounted && status === 'authenticated') {
+    if (mounted) {
       syncFromDatabase().catch(error => {
         console.error('Error syncing from database:', error)
       })
     }
-  }, [mounted, status, syncFromDatabase])
+  }, [mounted, syncFromDatabase])
 
-  // Handle authentication state changes - same flow as StartScreen
-  useEffect(() => {
-    if (mounted && status === 'authenticated') {
-      // If user just signed in (from dashboard or start screen), check if they need onboarding
-      // Redirect if no profile OR if dateOfBirth is missing (incomplete profile)
-      if ((!userProfile || !userProfile.dateOfBirth) && currentScreen !== 'onboarding' && currentScreen !== 'start') {
-        console.log('🔄 User authenticated but incomplete profile, redirecting to onboarding')
-        setCurrentScreen('onboarding')
-      }
-    }
-  }, [mounted, status, userProfile, currentScreen, setCurrentScreen])
+  // Authentication feature commented out - no auth state changes to handle
+  // useEffect(() => {
+  //   if (mounted && status === 'authenticated') {
+  //     // If user just signed in (from dashboard or start screen), check if they need onboarding
+  //     // Redirect if no profile OR if dateOfBirth is missing (incomplete profile)
+  //     if ((!userProfile || !userProfile.dateOfBirth) && currentScreen !== 'onboarding' && currentScreen !== 'start') {
+  //       console.log('🔄 User authenticated but incomplete profile, redirecting to onboarding')
+  //       setCurrentScreen('onboarding')
+  //     }
+  //   }
+  // }, [mounted, status, userProfile, currentScreen, setCurrentScreen])
 
   // Ensure start screen shows for new users
   useEffect(() => {
