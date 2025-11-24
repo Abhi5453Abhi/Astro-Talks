@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useSession } from 'next-auth/react'
 import { useStore } from '@/lib/store'
 import io from 'socket.io-client'
-import type { Socket } from 'socket.io-client'
 import { SIGNALING_SERVER_URL } from '@/lib/socket-config'
+
+type Socket = ReturnType<typeof io>
 
 interface RealCallProps {
   isOpen: boolean
@@ -134,23 +135,13 @@ export default function RealCall({
           })
         })
 
-        socket.on('call-accepted', async ({ offer }) => {
-          try {
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer))
-            const answer = await peerConnection.createAnswer()
-            await peerConnection.setLocalDescription(answer)
-            
-            socket.emit('answer', {
-              to: astrologerUserId,
-              answer: answer
-            })
-          } catch (error) {
-            console.error('Error handling call acceptance:', error)
-            setError('Failed to establish connection')
-          }
+        socket.on('call-accepted', async ({ from }: { from: string }) => {
+          // Note: call-accepted only sends { from }, not { offer }
+          // The offer is created below after this event
+          console.log('Call accepted by:', from)
         })
 
-        socket.on('answer', async ({ answer }) => {
+        socket.on('answer', async ({ answer }: { answer: RTCSessionDescriptionInit }) => {
           try {
             await peerConnection.setRemoteDescription(new RTCSessionDescription(answer))
           } catch (error) {
@@ -159,7 +150,7 @@ export default function RealCall({
           }
         })
 
-        socket.on('ice-candidate', async ({ candidate }) => {
+        socket.on('ice-candidate', async ({ candidate }: { candidate: RTCIceCandidateInit | null }) => {
           try {
             if (candidate) {
               await peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
@@ -183,7 +174,7 @@ export default function RealCall({
           onClose()
         })
 
-        socket.on('error', (error) => {
+        socket.on('error', (error: Error) => {
           console.error('Socket error:', error)
           setError(error.message || 'Connection error')
         })

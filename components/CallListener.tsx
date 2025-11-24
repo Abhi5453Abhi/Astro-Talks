@@ -4,9 +4,10 @@ import { useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useStore } from '@/lib/store'
 import io from 'socket.io-client'
-import type { Socket } from 'socket.io-client'
 import IncomingCall from './IncomingCall'
 import { SIGNALING_SERVER_URL } from '@/lib/socket-config'
+
+type Socket = ReturnType<typeof io>
 
 export default function CallListener() {
   const { data: session } = useSession()
@@ -34,7 +35,7 @@ export default function CallListener() {
       console.log('Call listener connected')
     })
 
-    socket.on('incoming-call', ({ from, fromName }) => {
+    socket.on('incoming-call', ({ from, fromName }: { from: string; fromName: string }) => {
       console.log('Incoming call from:', from, fromName)
       
       // Show browser notification if available
@@ -43,8 +44,7 @@ export default function CallListener() {
           body: `Call from ${fromName}`,
           icon: '/favicon.ico',
           tag: 'incoming-call',
-          requireInteraction: true,
-          vibrate: [200, 100, 200, 100, 200]
+          requireInteraction: true
         })
       }
 
