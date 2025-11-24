@@ -139,6 +139,7 @@ export default function Home() {
   const handleStartFreeChat = async () => {
     console.log('🎁 Starting free chat...')
     setFreeChatClaimed(true) // Mark free chat as claimed
+    setFreeChatActive(true) // Set active immediately to prevent "insufficient balance" flash
     setCurrentScreen('chat')
 
     // Format user details message
@@ -230,7 +231,6 @@ Place of Birth: Not specified`
         })
 
         // Now start the free chat timer
-        setFreeChatActive(true)
         setFreeChatStartTime(Date.now())
       }, 2500)
 

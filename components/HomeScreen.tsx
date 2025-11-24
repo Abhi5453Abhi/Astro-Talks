@@ -8,6 +8,7 @@ import { useStore } from '@/lib/store'
 // Authentication feature commented out
 // import AuthButton from '@/components/AuthButton'
 import RealCall from '@/components/RealCall'
+import AstrologerCard from '@/components/AstrologerCard'
 
 export default function HomeScreen() {
   // Authentication feature commented out
@@ -24,23 +25,43 @@ export default function HomeScreen() {
   const [astrologerUserId, setAstrologerUserId] = useState<string | null>(null)
   const [callError, setCallError] = useState<string | null>(null)
   const [isLoadingAstrologer, setIsLoadingAstrologer] = useState(false)
-  
+  const [astrologersList, setAstrologersList] = useState<any[]>([])
+  const [isLoadingAstrologersList, setIsLoadingAstrologersList] = useState(true)
+
   // Astrologer email - hardcoded
   const ASTROLOGER_EMAIL = 'raghavshastari@gmail.com'
-  
+
+  // Fetch astrologers list on mount
+  useEffect(() => {
+    const fetchAstrologers = async () => {
+      try {
+        const response = await fetch('/api/astrologers/list')
+        const data = await response.json()
+        if (data.success) {
+          setAstrologersList(data.astrologers)
+        }
+      } catch (error) {
+        console.error('Error fetching astrologers list:', error)
+      } finally {
+        setIsLoadingAstrologersList(false)
+      }
+    }
+    fetchAstrologers()
+  }, [])
+
   // Fetch astrologer user ID from email - lazy load only when needed
   const fetchAstrologerUserId = async () => {
     // If already loaded or currently loading, don't fetch again
     if (astrologerUserId || isLoadingAstrologer) {
       return astrologerUserId
     }
-    
+
     setIsLoadingAstrologer(true)
     setCallError(null)
-    
+
     try {
       const response = await fetch(`/api/users/get-by-email?email=${encodeURIComponent(ASTROLOGER_EMAIL)}`)
-      
+
       if (!response.ok) {
         if (response.status === 404) {
           console.warn('Astrologer user not found in database:', ASTROLOGER_EMAIL)
@@ -51,9 +72,9 @@ export default function HomeScreen() {
         }
         return null
       }
-      
+
       const data = await response.json()
-      
+
       if (data.success && data.userId) {
         setAstrologerUserId(data.userId)
         return data.userId
@@ -103,13 +124,13 @@ export default function HomeScreen() {
     //   alert('Please login to make a call')
     //   return
     // }
-    
+
     // Lazy load astrologer user ID if not already loaded
     let userId = astrologerUserId
     if (!userId) {
       userId = await fetchAstrologerUserId()
     }
-    
+
     // Check if astrologer user ID is available
     if (!userId) {
       if (callError) {
@@ -119,13 +140,13 @@ export default function HomeScreen() {
       }
       return
     }
-    
+
     // Check wallet balance (optional - you can set minimum balance requirement)
     // if (walletBalance < 200) {
     //   alert('Insufficient balance. Minimum ₹200 required for calling.')
     //   return
     // }
-    
+
     setShowCall(true)
   }
 
@@ -148,13 +169,13 @@ export default function HomeScreen() {
           />
         ))}
       </div>
-      
+
       {/* Header */}
       <div className="bg-slate-800/80 backdrop-blur-sm px-4 py-3 flex items-center justify-between shadow-lg border-b border-slate-700/50 relative z-10">
         <button className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500 flex items-center justify-center text-2xl">
           {userProfile?.name?.charAt(0).toUpperCase() || '😊'}
         </button>
-        
+
         <div className="flex items-center gap-2 px-4 py-2 bg-slate-700/50 border border-slate-600/50 rounded-full shadow-sm">
           <span className="font-bold text-white">₹ {walletBalance}</span>
           <button className="w-6 h-6 rounded-full bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center text-white text-sm font-bold">
@@ -244,11 +265,37 @@ export default function HomeScreen() {
         </div>
       </div>
 
+      {/* Astrologers Section */}
+      <div className="px-4 py-4 relative z-10 pb-32">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-bold text-white">Astrologers</h3>
+          <button className="text-sm text-yellow-400 font-semibold hover:text-yellow-300">View All</button>
+        </div>
+
+        {isLoadingAstrologersList ? (
+          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="min-w-[160px] w-[160px] h-[220px] bg-slate-800/50 rounded-2xl animate-pulse"></div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+            {astrologersList.map((astrologer) => (
+              <AstrologerCard
+                key={astrologer.id}
+                astrologer={astrologer}
+                onChat={() => handleChatWithAstrologer()}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
       {isHomeContext && (
         <>
           {/* Action Buttons */}
-          <div className="pointer-events-none fixed bottom-16 left-0 right-0 px-4 py-4 bg-slate-900/70 backdrop-blur-lg border-t border-slate-700/40 z-30">
-            <div className="pointer-events-auto mx-auto grid w-full max-w-lg grid-cols-2 gap-3 sm:gap-4">
+          <div className="fixed bottom-20 left-0 right-0 px-4 z-30 pointer-events-none">
+            <div className="mx-auto grid w-full max-w-lg grid-cols-2 gap-3 sm:gap-4 pointer-events-auto">
               <button
                 onClick={handleChatWithAstrologer}
                 className="flex w-full items-center justify-center gap-3 rounded-full bg-white text-slate-900 font-semibold tracking-wide py-3 px-4 shadow-[0_6px_18px_rgba(15,23,42,0.24)] transition-all duration-200 hover:shadow-[0_10px_26px_rgba(15,23,42,0.3)] sm:px-6 sm:py-3.5"

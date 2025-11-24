@@ -38,8 +38,13 @@ async function runMigration() {
 
     try {
         console.log('Running migration...');
-        await pool.query('ALTER TABLE users ALTER COLUMN date_of_birth DROP NOT NULL');
-        console.log('Migration successful: date_of_birth is now nullable.');
+
+        // Read the SQL file
+        const sqlPath = path.join(__dirname, 'migrations', '001_create_astrologers_table.sql');
+        const sql = fs.readFileSync(sqlPath, 'utf8');
+
+        await pool.query(sql);
+        console.log('Migration successful: astrologers table created and seeded.');
     } catch (err) {
         console.error('Migration failed:', err);
     } finally {
