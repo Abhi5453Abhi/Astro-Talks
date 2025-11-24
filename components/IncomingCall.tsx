@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useSession } from 'next-auth/react'
 import { useStore } from '@/lib/store'
 import io from 'socket.io-client'
-import type { Socket } from 'socket.io-client'
 import { SIGNALING_SERVER_URL } from '@/lib/socket-config'
+
+type Socket = ReturnType<typeof io>
 
 interface IncomingCallProps {
   isOpen: boolean
@@ -122,7 +123,7 @@ export default function IncomingCall({
           console.log('Connected to signaling server as receiver')
         })
 
-        socket.on('offer', async ({ offer }) => {
+        socket.on('offer', async ({ offer }: { offer: RTCSessionDescriptionInit }) => {
           try {
             await peerConnection.setRemoteDescription(new RTCSessionDescription(offer))
             const answer = await peerConnection.createAnswer()
@@ -138,7 +139,7 @@ export default function IncomingCall({
           }
         })
 
-        socket.on('answer', async ({ answer }) => {
+        socket.on('answer', async ({ answer }: { answer: RTCSessionDescriptionInit }) => {
           try {
             await peerConnection.setRemoteDescription(new RTCSessionDescription(answer))
           } catch (error) {
@@ -147,7 +148,7 @@ export default function IncomingCall({
           }
         })
 
-        socket.on('ice-candidate', async ({ candidate }) => {
+        socket.on('ice-candidate', async ({ candidate }: { candidate: RTCIceCandidateInit | null }) => {
           try {
             if (candidate) {
               await peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
@@ -161,7 +162,7 @@ export default function IncomingCall({
           handleCallEnd()
         })
 
-        socket.on('error', (error) => {
+        socket.on('error', (error: Error) => {
           console.error('Socket error:', error)
           setError(error.message || 'Connection error')
         })
@@ -245,7 +246,7 @@ export default function IncomingCall({
         transports: ['websocket', 'polling'],
         path: '/api/socket',
         query: {
-          userId: userProfile?.id || 'anonymous',
+          userId: userId,
           type: 'receiver'
         }
       })
