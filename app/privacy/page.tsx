@@ -26,7 +26,7 @@ const sections = [
   {
     title: 'Your Choices',
     items: [
-      'Request a copy of your data or ask us to delete it by writing to support@astro-talks.app.',
+      'Request a copy of your data or ask us to delete it by writing to support@astronova.app.',
       'Update your profile details from within the product or by contacting support.',
       'Opt out of non-essential emails using the unsubscribe link in every message.',
     ],
@@ -41,9 +41,9 @@ const sections = [
 ]
 
 export const metadata = {
-  title: 'Privacy Policy | Astro Talks',
+  title: 'Privacy Policy | Astronova',
   description:
-    'Understand how Astro Talks collects, uses, and protects your personal information.',
+    'Understand how Astronova collects, uses, and protects your personal information.',
 }
 
 export default function PrivacyPolicyPage() {
@@ -81,10 +81,10 @@ export default function PrivacyPolicyPage() {
         <p>
           For questions or requests related to this Privacy Policy, contact us at{' '}
           <a
-            href="mailto:support@astro-talks.app"
+            href="mailto:support@astronova.app"
             className="font-medium text-amber-200 underline underline-offset-4"
           >
-            support@astro-talks.app
+            support@astronova.app
           </a>
           . We aim to respond within 3 working days.
         </p>

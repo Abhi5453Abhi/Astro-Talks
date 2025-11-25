@@ -19,12 +19,12 @@ declare global {
   }
 }
 
-export default function PaymentCheckout({ 
-  isOpen, 
-  amount, 
-  extraPercent, 
+export default function PaymentCheckout({
+  isOpen,
+  amount,
+  extraPercent,
   onClose,
-  onPaymentSuccess 
+  onPaymentSuccess
 }: PaymentCheckoutProps) {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('')
   const [isProcessing, setIsProcessing] = useState(false)
@@ -111,7 +111,7 @@ export default function PaymentCheckout({
       const urlParams = new URLSearchParams(window.location.search)
       const paymentStatus = urlParams.get('payment')
       const orderId = urlParams.get('order_id')
-      
+
       if (paymentStatus === 'success' && orderId) {
         // Verify and complete payment
         verifyPayment(orderId)
@@ -137,7 +137,7 @@ export default function PaymentCheckout({
       // Validate phone number before proceeding
       const phoneRegex = /^[6-9]\d{9}$/
       const cleanPhone = customerPhone.replace(/\D/g, '')
-      
+
       if (!customerPhone || cleanPhone.length !== 10 || !phoneRegex.test(cleanPhone)) {
         alert('Please enter a valid 10-digit mobile number')
         setIsProcessing(false)
@@ -200,15 +200,15 @@ export default function PaymentCheckout({
       // Cashfree test credentials typically don't start with 'CF' or contain 'test'
       // Use the mode from the API response if provided, otherwise detect from app ID
       const mode = orderData.mode || (
-        process.env.NEXT_PUBLIC_CASHFREE_APP_ID && 
-        !process.env.NEXT_PUBLIC_CASHFREE_APP_ID.includes('test') &&
-        process.env.NEXT_PUBLIC_CASHFREE_APP_ID.startsWith('CF')
-          ? 'production' 
+        process.env.NEXT_PUBLIC_CASHFREE_APP_ID &&
+          !process.env.NEXT_PUBLIC_CASHFREE_APP_ID.includes('test') &&
+          process.env.NEXT_PUBLIC_CASHFREE_APP_ID.startsWith('CF')
+          ? 'production'
           : 'sandbox'
       )
-      
+
       console.log('Using Cashfree mode:', mode)
-      
+
       const cashfree = window.Cashfree({
         mode: mode,
       })
@@ -227,7 +227,7 @@ export default function PaymentCheckout({
         setIsProcessing(false)
         alert('Failed to open payment gateway. Please try again.')
       })
-      
+
       // Note: After payment, Cashfree will redirect back to the return_url
       // The payment verification will happen via URL parameters or webhook
     } catch (error: any) {
@@ -333,7 +333,7 @@ export default function PaymentCheckout({
                         <p className="text-green-700 font-bold mb-1">ASTROOFFER{extraPercent} applied</p>
                         <p className="text-green-600 text-sm flex items-start gap-1">
                           <span>✓</span>
-                          <span>₹{extraAmount.toFixed(0)} extra in Astrotalk wallet with this recharge</span>
+                          <span>₹{extraAmount.toFixed(0)} extra in Astronova wallet with this recharge</span>
                         </p>
                       </div>
                       <button className="text-gray-400 text-sm hover:text-gray-600">
@@ -386,16 +386,15 @@ export default function PaymentCheckout({
                         <span>📱</span>
                         Pay via UPI
                       </h3>
-                      
+
                       <div className="grid grid-cols-3 gap-3 mb-4">
                         <button
                           onClick={() => handleUpiPayment('phonepe')}
                           disabled={isProcessing || customerPhone.length !== 10}
-                          className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all disabled:opacity-50 ${
-                            selectedPaymentMethod === 'phonepe'
+                          className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all disabled:opacity-50 ${selectedPaymentMethod === 'phonepe'
                               ? 'border-amber-500 bg-amber-50'
                               : 'border-gray-200 bg-white hover:border-amber-300'
-                          }`}
+                            }`}
                         >
                           <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center text-white font-bold">
                             Pe
@@ -406,11 +405,10 @@ export default function PaymentCheckout({
                         <button
                           onClick={() => handleUpiPayment('paytm')}
                           disabled={isProcessing || customerPhone.length !== 10}
-                          className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all disabled:opacity-50 ${
-                            selectedPaymentMethod === 'paytm'
+                          className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all disabled:opacity-50 ${selectedPaymentMethod === 'paytm'
                               ? 'border-blue-500 bg-blue-50'
                               : 'border-gray-200 bg-white hover:border-blue-300'
-                          }`}
+                            }`}
                         >
                           <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xs">
                             Paytm
@@ -421,11 +419,10 @@ export default function PaymentCheckout({
                         <button
                           onClick={() => handleUpiPayment('gpay')}
                           disabled={isProcessing || customerPhone.length !== 10}
-                          className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all disabled:opacity-50 ${
-                            selectedPaymentMethod === 'gpay'
+                          className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all disabled:opacity-50 ${selectedPaymentMethod === 'gpay'
                               ? 'border-green-500 bg-green-50'
                               : 'border-gray-200 bg-white hover:border-green-300'
-                          }`}
+                            }`}
                         >
                           <div className="w-12 h-12 bg-white border-2 border-gray-300 rounded-xl flex items-center justify-center text-blue-600 font-bold text-xs">
                             G
@@ -439,15 +436,14 @@ export default function PaymentCheckout({
                     <div className="space-y-3">
                       <div className="border-t border-gray-200 pt-3">
                         <h4 className="text-gray-600 text-sm font-medium mb-3">Other Methods</h4>
-                        
+
                         <button
                           onClick={handleCardPaymentClick}
                           disabled={isProcessing || customerPhone.length !== 10}
-                          className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all mb-2 disabled:opacity-50 ${
-                            selectedPaymentMethod === 'card'
+                          className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all mb-2 disabled:opacity-50 ${selectedPaymentMethod === 'card'
                               ? 'border-amber-400 bg-amber-50'
                               : 'border-gray-200 bg-white hover:border-amber-300'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center gap-3">
                             <span className="text-xl">💳</span>

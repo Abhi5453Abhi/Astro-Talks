@@ -1,4 +1,4 @@
--- Database Schema for Astro Talks
+-- Database Schema for Astronova
 -- Copy and paste this entire file into Neon SQL Editor
 
 -- Users table - stores user profiles linked to NextAuth sessions

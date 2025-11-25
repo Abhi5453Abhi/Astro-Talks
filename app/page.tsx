@@ -189,7 +189,7 @@ Place of Birth: Not specified`
         addMessage({
           id: `welcome-${Date.now()}`,
           role: 'assistant',
-          content: 'Welcome to Astrotalk!',
+          content: 'Welcome to Astronova!',
           timestamp: Date.now(),
         })
       }, 500)

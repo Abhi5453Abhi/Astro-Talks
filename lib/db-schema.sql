@@ -1,4 +1,4 @@
--- Database Schema for Astro Talks
+-- Database Schema for Astronova
 -- This schema is portable to any PostgreSQL database
 -- Just run these SQL commands to set up the database
 

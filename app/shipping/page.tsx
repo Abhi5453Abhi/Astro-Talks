@@ -2,12 +2,12 @@ const policies = [
   {
     title: 'Digital Delivery Only',
     description:
-      'Astro Talks provides astrology consultations and reports digitally. There is no physical product shipment.',
+      'Astronova provides astrology consultations and reports digitally. There is no physical product shipment.',
   },
   {
     title: 'Access to Sessions',
     description:
-      'After successful payment, live chat sessions start instantly or at the scheduled slot inside the Astro Talks platform.',
+      'After successful payment, live chat sessions start instantly or at the scheduled slot inside the Astronova platform.',
   },
   {
     title: 'Report Turnaround',
@@ -22,14 +22,14 @@ const policies = [
   {
     title: 'Support',
     description:
-      'For any delivery questions, reach out to support@astro-talks.app with your registered mobile number or payment reference.',
+      'For any delivery questions, reach out to support@astronova.app with your registered mobile number or payment reference.',
   },
 ]
 
 export const metadata = {
-  title: 'Shipping & Delivery Policy | Astro Talks',
+  title: 'Shipping & Delivery Policy | Astronova',
   description:
-    'Understand how Astro Talks delivers digital astrology consultations and reports after purchase.',
+    'Understand how Astronova delivers digital astrology consultations and reports after purchase.',
 }
 
 export default function ShippingPolicyPage() {
@@ -61,10 +61,10 @@ export default function ShippingPolicyPage() {
         <p>
           For urgent delivery support, email{' '}
           <a
-            href="mailto:support@astro-talks.app"
+            href="mailto:support@astronova.app"
             className="font-medium text-amber-200 underline underline-offset-4"
           >
-            support@astro-talks.app
+            support@astronova.app
           </a>{' '}
           and we will respond within 1 business day.
         </p>

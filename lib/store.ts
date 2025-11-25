@@ -165,27 +165,27 @@ export const useStore = create<Store>()(
               set((state) => {
                 const dbMessages = messagesData.messages || []
                 const localMessages = state.messages || []
-                
+
                 // Create a map of existing messages by ID to avoid duplicates
                 const messageMap = new Map<string, Message>()
-                
+
                 // First, add all database messages
                 dbMessages.forEach((msg: Message) => {
                   messageMap.set(msg.id, msg)
                 })
-                
+
                 // Then, add local messages that aren't in the database (newer/unsaved messages)
                 localMessages.forEach((msg: Message) => {
                   if (!messageMap.has(msg.id)) {
                     messageMap.set(msg.id, msg)
                   }
                 })
-                
+
                 // Convert map back to array and sort by timestamp
                 const mergedMessages = Array.from(messageMap.values()).sort(
                   (a, b) => a.timestamp - b.timestamp
                 )
-                
+
                 return { messages: mergedMessages }
               })
             }
@@ -213,7 +213,7 @@ export const useStore = create<Store>()(
       },
     }),
     {
-      name: 'astro-talks-storage',
+      name: 'astronova-storage',
       storage: createJSONStorage(() => localStorage),
     }
   )

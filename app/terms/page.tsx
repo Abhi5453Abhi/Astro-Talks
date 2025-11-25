@@ -2,14 +2,14 @@ const sections = [
   {
     title: 'Acceptance of Terms',
     body: [
-      'By accessing Astro Talks, you agree to these Terms and any future revisions published on this page.',
+      'By accessing Astronova, you agree to these Terms and any future revisions published on this page.',
       'If you do not agree, please discontinue use immediately. Continued use after changes take effect counts as acceptance.',
     ],
   },
   {
     title: 'Service Overview',
     body: [
-      'Astro Talks provides digital astrology guidance and chat-based consultations. No medical, legal, or financial advice is offered.',
+      'Astronova provides digital astrology guidance and chat-based consultations. No medical, legal, or financial advice is offered.',
       'Outcomes are based on astrological interpretations and should be used for personal reflection, not as definitive predictions or guarantees.',
     ],
   },
@@ -32,14 +32,14 @@ const sections = [
   {
     title: 'Intellectual Property',
     body: [
-      'All content, branding, illustrations, and code underlying Astro Talks belong to Astro Talks or its licensors.',
+      'All content, branding, illustrations, and code underlying Astronova belong to Astronova or its licensors.',
       'You may not copy, resell, or redistribute platform content without written permission.',
     ],
   },
   {
     title: 'Limitation of Liability',
     body: [
-      'Astro Talks is provided on an “as-is” basis. To the fullest extent permitted by law, we disclaim liability for indirect, incidental, or consequential damages.',
+      'Astronova is provided on an “as-is” basis. To the fullest extent permitted by law, we disclaim liability for indirect, incidental, or consequential damages.',
       'Our maximum aggregate liability for any claim shall not exceed the amount paid by you for the service in the preceding 30 days.',
     ],
   },
@@ -52,8 +52,8 @@ const sections = [
 ]
 
 export const metadata = {
-  title: 'Terms & Conditions | Astro Talks',
-  description: 'Read the Terms and Conditions governing your use of Astro Talks services.',
+  title: 'Terms & Conditions | Astronova',
+  description: 'Read the Terms and Conditions governing your use of Astronova services.',
 }
 
 export default function TermsPage() {
@@ -65,7 +65,7 @@ export default function TermsPage() {
         </p>
         <h1 className="text-4xl font-semibold">Terms &amp; Conditions</h1>
         <p className="text-slate-300">
-          These Terms describe your rights, responsibilities, and the rules that apply when using Astro Talks.
+          These Terms describe your rights, responsibilities, and the rules that apply when using Astronova.
         </p>
       </header>
 
@@ -91,10 +91,10 @@ export default function TermsPage() {
         <p>
           Questions about these Terms? Email{' '}
           <a
-            href="mailto:support@astro-talks.app"
+            href="mailto:support@astronova.app"
             className="font-medium text-amber-200 underline underline-offset-4"
           >
-            support@astro-talks.app
+            support@astronova.app
           </a>{' '}
           and we will help you within 3 working days.
         </p>

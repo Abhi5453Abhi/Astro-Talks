@@ -17,7 +17,7 @@ const policies = [
     title: 'Refund Eligibility',
     points: [
       'Refunds are granted only when a paid session does not start due to an issue on our side (for example, astrologer unavailability or platform downtime).',
-      'Refund requests must be made within 48 hours of the incident by emailing support@astro-talks.app with payment details and a brief description.',
+      'Refund requests must be made within 48 hours of the incident by emailing support@astronova.app with payment details and a brief description.',
     ],
   },
   {
@@ -37,9 +37,9 @@ const policies = [
 ]
 
 export const metadata = {
-  title: 'Cancellation & Refund Policy | Astro Talks',
+  title: 'Cancellation & Refund Policy | Astronova',
   description:
-    'Understand the cancellation windows, refund eligibility, and processing timelines for Astro Talks sessions.',
+    'Understand the cancellation windows, refund eligibility, and processing timelines for Astronova sessions.',
 }
 
 export default function CancellationRefundPage() {
@@ -75,10 +75,10 @@ export default function CancellationRefundPage() {
         <p>
           Need help? Email{' '}
           <a
-            href="mailto:support@astro-talks.app"
+            href="mailto:support@astronova.app"
             className="font-medium text-amber-200 underline underline-offset-4"
           >
-            support@astro-talks.app
+            support@astronova.app
           </a>{' '}
           with your order ID, and the team will respond within 2 business days.
         </p>
