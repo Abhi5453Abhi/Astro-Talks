@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generateInterpretation } from '@/lib/kundali/interpret'
 import type { InterpretationRequest } from '@/lib/kundali/types'
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const body = await request.json()
+    const body = await req.json()
     const { natal, dashas, transit, metrics, mood, length } = body
 
     // Validate required fields
