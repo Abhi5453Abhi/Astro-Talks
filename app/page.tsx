@@ -10,6 +10,12 @@ import FreeChatOption from '@/components/FreeChatOption'
 import HomeScreen from '@/components/HomeScreen'
 import StartScreen from '@/components/StartScreen'
 import DailyHoroscope from '@/components/DailyHoroscope'
+import FreeKundli from '@/components/FreeKundli'
+import KundliMatching from '@/components/KundliMatching'
+import ComingSoon from '@/components/ComingSoon'
+import AstrologersList from '@/components/AstrologersList'
+import MySessions from '@/components/MySessions'
+import FreeServices from '@/components/FreeServices'
 import { useStore } from '@/lib/store'
 import { ASTROLOGER } from '@/lib/astrologer'
 
@@ -140,7 +146,7 @@ export default function Home() {
     console.log('🎁 Starting free chat...')
     setFreeChatClaimed(true) // Mark free chat as claimed
     setFreeChatActive(true) // Set active immediately to prevent "insufficient balance" flash
-    setCurrentScreen('chat')
+    setCurrentScreen('free-chat') // Use 'free-chat' to go directly to ChatInterface
 
     // Format user details message
     if (userProfile) {
@@ -270,12 +276,28 @@ Place of Birth: Not specified`
         <Onboarding />
       ) : currentScreen === 'home' ? (
         <HomeScreen />
+      ) : currentScreen === 'chat' ? (
+        <AstrologersList mode="chat" />
+      ) : currentScreen === 'call' ? (
+        <AstrologersList mode="call" />
+      ) : currentScreen === 'my-sessions' ? (
+        <MySessions />
       ) : currentScreen === 'daily-horoscope' ? (
         <DailyHoroscope />
+      ) : currentScreen === 'free-kundli' ? (
+        <FreeKundli />
+      ) : currentScreen === 'kundli-matching' ? (
+        <KundliMatching />
+      ) : currentScreen === 'remedies' ? (
+        <ComingSoon feature="Remedies" description="Get personalized astrological remedies and solutions for your life challenges" />
+      ) : currentScreen === 'free-services' ? (
+        <FreeServices />
       ) : currentScreen === 'free-chat-option' && !freeChatClaimed ? (
         <FreeChatOption onStartFreeChat={handleStartFreeChat} onSkip={handleSkip} />
       ) : currentScreen === 'free-chat-option' && freeChatClaimed ? (
         <HomeScreen />
+      ) : currentScreen === 'free-chat' ? (
+        <ChatInterface />
       ) : (
         <ChatInterface />
       )}

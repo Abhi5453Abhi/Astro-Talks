@@ -11,6 +11,7 @@ export interface Message {
 }
 
 export interface UserProfile {
+  id?: string
   name: string
   dateOfBirth?: string
   birthTime?: string
@@ -26,8 +27,15 @@ export type Screen =
   | 'onboarding'
   | 'home'
   | 'chat'
+  | 'call'
+  | 'free-chat'
   | 'free-chat-option'
   | 'daily-horoscope'
+  | 'free-kundli'
+  | 'kundli-matching'
+  | 'remedies'
+  | 'free-services'
+  | 'my-sessions'
 
 interface Store {
   userProfile: UserProfile | null
