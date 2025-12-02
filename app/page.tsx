@@ -11,11 +11,6 @@ import HomeScreen from '@/components/HomeScreen'
 import StartScreen from '@/components/StartScreen'
 import DailyHoroscope from '@/components/DailyHoroscope'
 import FreeKundli from '@/components/FreeKundli'
-import KundliMatching from '@/components/KundliMatching'
-import ComingSoon from '@/components/ComingSoon'
-import AstrologersList from '@/components/AstrologersList'
-import MySessions from '@/components/MySessions'
-import FreeServices from '@/components/FreeServices'
 import { useStore } from '@/lib/store'
 import { ASTROLOGER } from '@/lib/astrologer'
 
@@ -277,21 +272,21 @@ Place of Birth: Not specified`
       ) : currentScreen === 'home' ? (
         <HomeScreen />
       ) : currentScreen === 'chat' ? (
-        <AstrologersList mode="chat" />
+        <HomeScreen />
       ) : currentScreen === 'call' ? (
-        <AstrologersList mode="call" />
+        <HomeScreen />
       ) : currentScreen === 'my-sessions' ? (
-        <MySessions />
+        <HomeScreen />
       ) : currentScreen === 'daily-horoscope' ? (
         <DailyHoroscope />
       ) : currentScreen === 'free-kundli' ? (
         <FreeKundli />
       ) : currentScreen === 'kundli-matching' ? (
-        <KundliMatching />
+        <HomeScreen />
       ) : currentScreen === 'remedies' ? (
-        <ComingSoon feature="Remedies" description="Get personalized astrological remedies and solutions for your life challenges" />
+        <HomeScreen />
       ) : currentScreen === 'free-services' ? (
-        <FreeServices />
+        <HomeScreen />
       ) : currentScreen === 'free-chat-option' && !freeChatClaimed ? (
         <FreeChatOption onStartFreeChat={handleStartFreeChat} onSkip={handleSkip} />
       ) : currentScreen === 'free-chat-option' && freeChatClaimed ? (
