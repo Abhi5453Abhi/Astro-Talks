@@ -39,7 +39,7 @@ export default function ChatInterface() {
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [showCashbackOffer, setShowCashbackOffer] = useState(false)
   const [showVideoCall, setShowVideoCall] = useState(false)
-  const [timeRemaining, setTimeRemaining] = useState(15) // 15 seconds
+  const [timeRemaining, setTimeRemaining] = useState(120) // 2 minutes
 
   // Minimum balance required: 10 minutes at ₹20/min = ₹200
   const MINIMUM_BALANCE = 200
@@ -53,14 +53,14 @@ export default function ChatInterface() {
   const inactivityTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const hasStartedFollowUpsRef = useRef(false)
   const userHasRepliedRef = useRef(false) // Track if user has sent their first message
-  const urgencyMessageSentRef = useRef(false) // Track if urgency message has been sent
+  const urgencyMessageSentRef = useRef(false) // Track if 20-second urgency message has been sent
 
-  // Generate urgency message at 5 seconds remaining
+  // Generate urgency message at 20 seconds
   const generateUrgencyMessage = async () => {
     if (urgencyMessageSentRef.current) return
     urgencyMessageSentRef.current = true
 
-    console.log('⚠️ Generating urgency message at 5 seconds remaining...')
+    console.log('⚠️ Generating urgency message at 20 seconds...')
 
     // Collect all user questions
     const userQuestions = messages
@@ -117,12 +117,12 @@ export default function ChatInterface() {
 
     const interval = setInterval(() => {
       const elapsed = Math.floor((Date.now() - freeChatStartTime) / 1000)
-      const remaining = Math.max(0, 15 - elapsed) // 15 seconds
+      const remaining = Math.max(0, 120 - elapsed) // 2 minutes
 
       setTimeRemaining(remaining)
 
-      // Send urgency message at 5 seconds remaining
-      if (remaining === 5 && !urgencyMessageSentRef.current) {
+      // Send urgency message at 20 seconds
+      if (remaining === 20 && !urgencyMessageSentRef.current) {
         generateUrgencyMessage()
       }
 
@@ -666,7 +666,7 @@ export default function ChatInterface() {
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold ${timeRemaining <= 5
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold ${timeRemaining <= 30
                   ? 'bg-red-100 text-red-700 border border-red-300 animate-pulse'
                   : 'bg-yellow-100 text-yellow-700 border border-yellow-300'
                   }`}
