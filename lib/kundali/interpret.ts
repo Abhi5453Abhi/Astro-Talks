@@ -9,6 +9,7 @@ import type {
   NatalChart,
   DashaPeriod,
   TransitData,
+  Shadbala,
 } from './types'
 
 const MOOD_TONES: Record<string, { tone: string; keywords: string[] }> = {
@@ -98,9 +99,10 @@ function extractChartFacts(
   
   // Weak planets
   if (metrics?.shadbala) {
-    const weakPlanet = Object.entries(metrics.shadbala)
-      .sort((a: any, b: any) => a[1].total - b[1].total)[0]
-    if (weakPlanet && weakPlanet[1].total < 40) {
+    const shadbalaEntries = Object.entries(metrics.shadbala) as [string, Shadbala[string]][]
+    const weakPlanet = shadbalaEntries
+      .sort((a, b) => (a[1]?.total || 0) - (b[1]?.total || 0))[0]
+    if (weakPlanet && weakPlanet[1] && weakPlanet[1].total < 40) {
       facts.push(`${weakPlanet[0]} is weak (strength ${Math.round(weakPlanet[1].total)}/100)`)
     }
   }
