@@ -4,6 +4,7 @@ import './globals.css'
 // import AuthProvider from '@/components/providers/AuthProvider'
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
 import CallListener from '@/components/CallListener'
+import { Analytics } from "@vercel/analytics/next"
 
 export const metadata: Metadata = {
   title: 'Astronova - Connect with Astrologer',
@@ -38,6 +39,7 @@ export default function RootLayout({
         <ServiceWorkerRegistration />
         <CallListener />
         {children}
+        <Analytics />
         {/* </AuthProvider> */}
       </body>
     </html>
