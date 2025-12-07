@@ -4,25 +4,11 @@ import { query } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {
-    // Log request details for debugging
     const cookies = request.headers.get('cookie') || ''
-    const hasCookies = cookies.length > 0
-    const cookieNames = cookies ? cookies.split(';').map(c => c.split('=')[0].trim()) : []
     
-    console.log('🔍 [401 DEBUG] /api/messages/save - Request received')
-    console.log('  - Has cookies:', hasCookies)
-    console.log('  - Cookie names:', cookieNames)
-    console.log('  - NEXTAUTH_SECRET set:', !!process.env.NEXTAUTH_SECRET)
-    
-    // Use getToken to read JWT directly from cookies - more reliable in App Router
+    // Use getToken to read JWT directly from cookies
     let token
     try {
-      const cookieValue = cookies.split('next-auth.session-token=')[1]?.split(';')[0] || ''
-      if (cookieValue && hasCookies) {
-        console.log('  - Cookie value preview:', cookieValue.substring(0, 50) + '...')
-      }
-      
-      // Explicitly specify cookie name for getToken
       const cookieName = process.env.NODE_ENV === 'production' 
         ? '__Secure-next-auth.session-token'
         : 'next-auth.session-token'
@@ -32,50 +18,34 @@ export async function POST(request: NextRequest) {
         secret: process.env.NEXTAUTH_SECRET,
         cookieName: cookieName
       })
-      
-      if (!token && hasCookies && cookieNames.includes('next-auth.session-token')) {
-        console.error('  - ⚠️ CRITICAL: Cookie exists but getToken returned null')
-      }
     } catch (tokenError: any) {
-      console.error('  - ❌ Error extracting token:', tokenError?.message || tokenError)
-      console.error('  - Error code:', tokenError?.code)
+      console.error('Error extracting token:', tokenError?.message || tokenError)
     }
     
-    console.log('  - Token extracted:', !!token)
-    if (token) {
-      console.log('  - Token has sub:', !!token.sub)
-      console.log('  - Token keys:', Object.keys(token))
-      console.log('  - Token sub value:', token.sub)
-    } else {
-      console.log('  - ❌ Token is null/undefined')
-      if (hasCookies) {
-        console.log('  - ⚠️ Cookies present but token extraction failed')
-      }
-    }
-    
-    if (!token?.sub) {
-      console.error('❌ [401 ERROR] /api/messages/save - Unauthorized')
-      console.error('  - Reason: Token missing or token.sub is missing')
-      console.error('  - Token exists:', !!token)
-      console.error('  - Token.sub exists:', !!token?.sub)
-      console.error('  - Available cookies:', cookieNames.join(', ') || 'none')
-      
-      return NextResponse.json(
-        { 
-          error: 'Unauthorized',
-          debug: {
-            hasToken: !!token,
-            hasSub: !!token?.sub,
-            cookieCount: cookieNames.length,
-            cookieNames: cookieNames
-          }
-        },
-        { status: 401 }
-      )
-    }
+    // Parse request body once
+    const body = await request.json()
+    const { messages, userId: requestUserId } = body
 
-    const userId = token.sub
-    const { messages } = await request.json()
+    // If no token, create or use a guest user
+    let userId: string
+    if (!token?.sub) {
+      if (requestUserId) {
+        userId = requestUserId
+      } else {
+        // Check for existing guest ID in cookie
+        const guestIdCookie = cookies.split('guest-user-id=')[1]?.split(';')[0]
+        
+        if (guestIdCookie) {
+          userId = guestIdCookie
+        } else {
+          // Generate a new guest ID
+          const crypto = require('crypto')
+          userId = crypto.randomUUID()
+        }
+      }
+    } else {
+      userId = token.sub
+    }
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(

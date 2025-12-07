@@ -9,16 +9,12 @@ export async function POST(request: NextRequest) {
   try {
     const { userQuestions, userProfile } = await request.json()
 
-    console.log('⚠️ Urgency Message API Request:')
-    console.log('User questions:', userQuestions)
-    console.log('User name:', userProfile?.name)
-
     const primaryLanguage = userProfile?.languages?.[0] || 'english'
     const languageStyle = primaryLanguage === 'hindi' || primaryLanguage === 'punjabi' 
       ? 'Hinglish (Hindi in Roman script)' 
       : 'English'
 
-    const systemPrompt = `You are an astrologer urgently trying to help a user whose free chat time is about to end in 20 seconds.
+    const systemPrompt = `You are an astrologer urgently trying to help a user whose free chat time is about to end in 5 seconds.
 
 CRITICAL RULES:
 1. Generate EXACTLY 2 lines separated by a comma
@@ -38,7 +34,7 @@ User asked about relationship:
 "Thoda time badha lijiye warna important baatein reh jayengi, aapki love life mein ek major change dikhta hai jo aapko jaanna chahiye"
 
 User asked about career:
-"Abhi 20 second hi bache hain lekin main aapko puri help karna chahta hoon time badha lijiye, career mein breakthrough wali baat batani hai"
+"Abhi 5 second hi bache hain lekin main aapko puri help karna chahta hoon time badha lijiye, career mein breakthrough wali baat batani hai"
 
 STRUCTURE:
 Part 1: [Urgently ask to buy more time - mention time running out]
@@ -59,13 +55,11 @@ Keep it natural, emotional, and URGENT but caring. Make them feel you genuinely 
     const urgencyMessage = response.choices[0].message.content || 
       "Ek baar recharge karke chat time badha lijiye taki main aapki puri help kar sakun, 3 cheezein bohot acchi dekh raha hu mein aapki kundli mein"
 
-    console.log('⚠️ Generated urgency message:', urgencyMessage)
-
     return NextResponse.json({
       message: urgencyMessage,
     })
   } catch (error: any) {
-    console.error('❌ Urgency Message API Error:', error)
+    console.error('Urgency Message API Error:', error)
     
     // Fallback urgency message
     return NextResponse.json({

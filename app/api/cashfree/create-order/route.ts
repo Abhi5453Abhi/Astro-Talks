@@ -51,13 +51,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Log credential info (without exposing secret)
-    console.log('Cashfree credentials check:', {
-      appIdLength: appId?.length,
-      secretKeyLength: secretKey?.length,
-      appIdPrefix: appId?.substring(0, 5),
-    })
-
     // Determine if we're in sandbox or production mode
     // Check both appId and secretKey for production indicators
     // Production secret keys typically contain 'prod' or 'production'
@@ -82,12 +75,6 @@ export async function POST(request: NextRequest) {
     const apiBaseUrl = isProduction 
       ? 'https://api.cashfree.com' 
       : 'https://sandbox.cashfree.com'
-    
-    console.log('Cashfree API configuration:', {
-      mode,
-      apiBaseUrl,
-      isProduction,
-    })
 
     // Generate order ID if not provided
     const order_id = orderId || `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -139,24 +126,8 @@ export async function POST(request: NextRequest) {
     
     const returnUrl = `${httpsBaseUrl}/api/cashfree/callback?order_id={order_id}`
     const notifyUrl = `${httpsBaseUrl}/api/cashfree/webhook`
-    
-    console.log('Cashfree URLs:', {
-      nextAuthUrl: process.env.NEXTAUTH_URL,
-      vercelUrl: process.env.VERCEL_URL,
-      usingBaseUrl: baseUrl,
-      httpsBaseUrl,
-      returnUrl,
-      notifyUrl,
-    })
 
     // Create order using Cashfree API
-    console.log('Creating Cashfree order:', {
-      url: `${apiBaseUrl}/pg/orders`,
-      order_id,
-      order_amount,
-      order_currency: currency,
-    })
-    
     const response = await fetch(`${apiBaseUrl}/pg/orders`, {
       method: 'POST',
       headers: {
@@ -213,11 +184,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('Cashfree order created successfully:', JSON.stringify(orderData, null, 2))
-
     // Check if payment_session_id is already in the order response (some API versions return it)
     if (orderData.payment_session_id) {
-      console.log('Payment session ID found in order response:', orderData.payment_session_id)
       return NextResponse.json({
         orderId: orderData.order_id,
         paymentSessionId: orderData.payment_session_id,
@@ -229,9 +197,6 @@ export async function POST(request: NextRequest) {
 
     // If payment_session_id is not in order response, create a payment session
     // Cashfree requires a separate API call to get payment_session_id
-    console.log('Creating payment session for order:', orderData.order_id)
-    console.log('Using API base URL:', apiBaseUrl)
-    
     const sessionResponse = await fetch(`${apiBaseUrl}/pg/orders/${orderData.order_id}/sessions`, {
       method: 'POST',
       headers: {
@@ -256,7 +221,6 @@ export async function POST(request: NextRequest) {
     })
 
     const sessionData = await sessionResponse.json()
-    console.log('Payment session response:', JSON.stringify(sessionData, null, 2))
 
     if (!sessionResponse.ok) {
       console.error('Cashfree payment session creation error:', JSON.stringify(sessionData, null, 2))
@@ -279,8 +243,6 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
-
-    console.log('Payment session created successfully:', paymentSessionId)
 
     return NextResponse.json({
       orderId: orderData.order_id,

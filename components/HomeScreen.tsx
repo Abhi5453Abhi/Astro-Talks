@@ -92,9 +92,10 @@ export default function HomeScreen() {
     }
   }
 
-  const isHomeContext =
-    currentScreen === 'home' ||
-    (currentScreen === 'free-chat-option' && freeChatClaimed)
+  // Footer should show on home screen, or when HomeScreen is rendered for free-chat-option (after redirect)
+  // The redirect in app/page.tsx will change currentScreen to 'home', but during the transition
+  // we still want to show the footer
+  const isHomeContext = currentScreen === 'home' || (currentScreen === 'free-chat-option' && freeChatClaimed)
 
   const features = [
     {
@@ -109,6 +110,13 @@ export default function HomeScreen() {
   ]
 
   const handleChatWithAstrologer = () => {
+    // Check if user has completed onboarding
+    if (!userProfile || !userProfile.dateOfBirth) {
+      // If no profile, go to onboarding first
+      setCurrentScreen('onboarding')
+      return
+    }
+    
     // If free chat already claimed, go directly to chat
     // Otherwise, show the free chat option first
     if (freeChatClaimed) {

@@ -26,13 +26,15 @@ export default function Home() {
 
   // Authentication feature commented out - no auth checks needed
   // Load user data from database on mount (without auth requirement)
+  // Only sync once on mount to prevent repeated calls that might change screen
   useEffect(() => {
     if (mounted) {
       syncFromDatabase().catch(error => {
         console.error('Error syncing from database:', error)
       })
     }
-  }, [mounted, syncFromDatabase])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted]) // Remove syncFromDatabase from dependencies to prevent repeated syncing
 
   // Authentication feature commented out - no auth state changes to handle
   // useEffect(() => {
@@ -56,12 +58,16 @@ export default function Home() {
   }, [userProfile, currentScreen, setCurrentScreen])
 
   // Auto-correct screen if free chat was claimed but screen is still set to free-chat-option
+  // Use a ref to prevent infinite loops and ensure redirect happens smoothly
   useEffect(() => {
-    if (freeChatClaimed && currentScreen === 'free-chat-option') {
-      console.log('🔄 Free chat already claimed, redirecting to home...')
-      setCurrentScreen('home')
+    if (mounted && freeChatClaimed && currentScreen === 'free-chat-option') {
+      // Use setTimeout to ensure state updates happen in the right order
+      const timer = setTimeout(() => {
+        setCurrentScreen('home')
+      }, 0)
+      return () => clearTimeout(timer)
     }
-  }, [freeChatClaimed, currentScreen, setCurrentScreen])
+  }, [mounted, freeChatClaimed, currentScreen, setCurrentScreen])
 
   // Handle payment callback from Cashfree
   useEffect(() => {
@@ -223,11 +229,23 @@ Place of Birth: Not specified`
         addMessage(joinedMessage)
 
         // Save system message to database
+        const currentUserProfile = useStore.getState().userProfile
         fetch('/api/messages/save', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: [joinedMessage] }),
-        }).catch(error => {
+          credentials: 'include',
+          body: JSON.stringify({ 
+            messages: [joinedMessage],
+            userId: currentUserProfile?.id // Send userId if available
+          }),
+        })
+        .then(async (response) => {
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}))
+            console.error('Error saving system message to database:', response.status, errorData)
+          }
+        })
+        .catch(error => {
           console.error('Error saving system message to database:', error)
         })
 
@@ -272,7 +290,7 @@ Place of Birth: Not specified`
       ) : currentScreen === 'home' ? (
         <HomeScreen />
       ) : currentScreen === 'chat' ? (
-        <HomeScreen />
+        <ChatInterface />
       ) : currentScreen === 'call' ? (
         <HomeScreen />
       ) : currentScreen === 'my-sessions' ? (

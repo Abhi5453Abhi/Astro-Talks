@@ -92,11 +92,19 @@ export const useStore = create<Store>()(
       dailyHoroscopeCache: {},
       incomingCall: null,
       setIncomingCall: (call) => set({ incomingCall: call }),
-      setUserProfile: (profile) => set((state) => ({
-        userProfile: profile,
-        // Show free chat option only if not claimed yet
-        currentScreen: state.freeChatClaimed ? 'home' : 'free-chat-option'
-      })),
+      setUserProfile: (profile) => set((state) => {
+        // Only update the profile, don't change screen automatically
+        // Screen changes should be handled explicitly by the components
+        const newState: any = { userProfile: profile }
+        
+        // Only auto-change screen if we're on start screen and setting profile for first time
+        // This handles the initial onboarding flow
+        if (state.currentScreen === 'start' && !state.userProfile && profile) {
+          newState.currentScreen = state.freeChatClaimed ? 'home' : 'free-chat-option'
+        }
+        
+        return newState
+      }),
       addMessage: (message) =>
         set((state) => ({ messages: [...state.messages, message] })),
       setFreeReadingUsed: (used) => set({ freeReadingUsed: used }),
@@ -153,7 +161,14 @@ export const useStore = create<Store>()(
           if (userResponse.ok) {
             const userData = await userResponse.json()
             if (userData.success && userData.user) {
-              set({ userProfile: userData.user })
+              // Store user profile with ID if available
+              // Use setUserProfile to maintain consistency, but it won't change screen if already on home
+              const currentState = useStore.getState()
+              if (currentState.userProfile?.id !== userData.user.id || 
+                  JSON.stringify(currentState.userProfile) !== JSON.stringify(userData.user)) {
+                // Only update if profile actually changed
+                set({ userProfile: { ...userData.user, id: userData.user.id } })
+              }
             }
           } else {
             console.warn('Failed to sync user profile:', userResponse.status, userResponse.statusText)
@@ -209,11 +224,19 @@ export const useStore = create<Store>()(
         try {
           const state = useStore.getState()
           if (state.messages.length > 0) {
-            await fetch('/api/messages/save', {
+            const saveResponse = await fetch('/api/messages/save', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ messages: state.messages }),
+              credentials: 'include',
+              body: JSON.stringify({ 
+                messages: state.messages,
+                userId: state.userProfile?.id // Send userId if available
+              }),
             })
+            if (!saveResponse.ok) {
+              const errorData = await saveResponse.json().catch(() => ({}))
+              console.error('Error syncing messages to database:', saveResponse.status, errorData)
+            }
           }
         } catch (error) {
           console.error('Error syncing messages to database:', error)

@@ -37,11 +37,14 @@ export function getPool(): Pool {
 // Helper function to execute queries
 export async function query(text: string, params?: any[]) {
   const pool = getPool()
-  const start = Date.now()
   try {
     const res = await pool.query(text, params)
-    const duration = Date.now() - start
-    console.log('Executed query', { text, duration, rows: res.rowCount })
+    // Only log queries in development
+    if (process.env.NODE_ENV === 'development') {
+      const start = Date.now()
+      const duration = Date.now() - start
+      console.log('Executed query', { text, duration, rows: res.rowCount })
+    }
     return res
   } catch (error) {
     console.error('Database query error', { text, error })

@@ -56,7 +56,7 @@ export default function FreeChatOption({ onStartFreeChat, onSkip }: FreeChatOpti
               🎁 <span className="font-semibold">Special Offer</span>
             </p>
             <p className="text-white font-bold text-xl">
-              2 Minutes Free Chat
+              15 Seconds Free Chat
             </p>
             <p className="text-gray-300 text-sm mt-1">
               with Astrologer

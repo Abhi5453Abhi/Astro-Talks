@@ -4,27 +4,9 @@ import { query } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
-    // Log request details for debugging
-    const cookies = request.headers.get('cookie') || ''
-    const hasCookies = cookies.length > 0
-    const cookieNames = cookies ? cookies.split(';').map(c => c.split('=')[0].trim()) : []
-
-    console.log('🔍 [401 DEBUG] /api/users/get - Request received')
-    console.log('  - Has cookies:', hasCookies)
-    console.log('  - Cookie names:', cookieNames)
-    console.log('  - NEXTAUTH_SECRET set:', !!process.env.NEXTAUTH_SECRET)
-
-    // Use getToken to read JWT directly from cookies - more reliable in App Router
+    // Use getToken to read JWT directly from cookies
     let token
     try {
-      // Log the actual cookie value (first 50 chars for security)
-      const cookieValue = cookies.split('next-auth.session-token=')[1]?.split(';')[0] || ''
-      if (cookieValue) {
-        console.log('  - Cookie value preview:', cookieValue.substring(0, 50) + '...')
-        console.log('  - Cookie value length:', cookieValue.length)
-      }
-
-      // Explicitly specify cookie name for getToken
       const cookieName = process.env.NODE_ENV === 'production'
         ? '__Secure-next-auth.session-token'
         : 'next-auth.session-token'
@@ -34,43 +16,11 @@ export async function GET(request: NextRequest) {
         secret: process.env.NEXTAUTH_SECRET,
         cookieName: cookieName
       })
-
-      console.log('  - Cookie name used:', cookieName)
-
-      // If token is null but cookie exists, log more details
-      if (!token && hasCookies && cookieNames.includes('next-auth.session-token')) {
-        console.error('  - ⚠️ CRITICAL: Cookie exists but getToken returned null')
-        console.error('  - NEXTAUTH_SECRET length:', process.env.NEXTAUTH_SECRET?.length || 0)
-        console.error('  - Request URL:', request.url)
-        console.error('  - Request method:', request.method)
-      }
     } catch (tokenError: any) {
-      console.error('  - ❌ Error extracting token:', tokenError?.message || tokenError)
-      console.error('  - Token error details:', {
-        name: tokenError?.name,
-        message: tokenError?.message,
-        code: tokenError?.code,
-        stack: tokenError?.stack?.split('\n').slice(0, 3).join('\n')
-      })
-    }
-
-    console.log('  - Token extracted:', !!token)
-    if (token) {
-      console.log('  - Token has sub:', !!token.sub)
-      console.log('  - Token keys:', Object.keys(token))
-      console.log('  - Token sub value:', token.sub)
-    } else {
-      console.log('  - ❌ Token is null/undefined')
-      if (hasCookies) {
-        console.log('  - ⚠️ Cookies present but token extraction failed - possible issues:')
-        console.log('    1. NEXTAUTH_SECRET mismatch')
-        console.log('    2. Token expired or invalid')
-        console.log('    3. Cookie name mismatch')
-      }
+      console.error('Error extracting token:', tokenError?.message || tokenError)
     }
 
     if (!token?.sub) {
-      console.log('⚠️ [AUTH INFO] /api/users/get - No session token found, returning null user')
       return NextResponse.json({
         success: true,
         user: null
@@ -96,6 +46,7 @@ export async function GET(request: NextRequest) {
 
     // Convert database format to frontend format
     const userProfile = {
+      id: dbUser.id, // Include user ID
       name: dbUser.name,
       dateOfBirth: dbUser.date_of_birth,
       birthTime: dbUser.birth_time || undefined,

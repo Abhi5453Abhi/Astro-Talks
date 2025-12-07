@@ -32,13 +32,6 @@ export async function GET(request: NextRequest) {
     let httpsBaseUrl = baseUrl.replace(/^https?:\/\//, '')
     httpsBaseUrl = httpsBaseUrl.replace(/\/$/, '')
     httpsBaseUrl = `https://${httpsBaseUrl}`
-    
-    console.log('Callback redirect URL:', {
-      requestOrigin,
-      baseUrl,
-      httpsBaseUrl,
-      requestUrl: request.url,
-    })
 
     if (!orderId) {
       return NextResponse.redirect(new URL(`/?payment=error&message=Order ID missing`, httpsBaseUrl))

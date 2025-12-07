@@ -39,7 +39,7 @@ export default function ChatInterface() {
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [showCashbackOffer, setShowCashbackOffer] = useState(false)
   const [showVideoCall, setShowVideoCall] = useState(false)
-  const [timeRemaining, setTimeRemaining] = useState(120) // 2 minutes
+  const [timeRemaining, setTimeRemaining] = useState(15) // 15 seconds
 
   // Minimum balance required: 10 minutes at ₹20/min = ₹200
   const MINIMUM_BALANCE = 200
@@ -53,14 +53,14 @@ export default function ChatInterface() {
   const inactivityTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const hasStartedFollowUpsRef = useRef(false)
   const userHasRepliedRef = useRef(false) // Track if user has sent their first message
-  const urgencyMessageSentRef = useRef(false) // Track if 20-second urgency message has been sent
+  const urgencyMessageSentRef = useRef(false) // Track if urgency message has been sent
 
-  // Generate urgency message at 20 seconds
+  // Generate urgency message at 5 seconds remaining
   const generateUrgencyMessage = async () => {
     if (urgencyMessageSentRef.current) return
     urgencyMessageSentRef.current = true
 
-    console.log('⚠️ Generating urgency message at 20 seconds...')
+    console.log('⚠️ Generating urgency message at 5 seconds remaining...')
 
     // Collect all user questions
     const userQuestions = messages
@@ -117,12 +117,12 @@ export default function ChatInterface() {
 
     const interval = setInterval(() => {
       const elapsed = Math.floor((Date.now() - freeChatStartTime) / 1000)
-      const remaining = Math.max(0, 120 - elapsed) // 2 minutes
+      const remaining = Math.max(0, 15 - elapsed) // 15 seconds
 
       setTimeRemaining(remaining)
 
-      // Send urgency message at 20 seconds
-      if (remaining === 20 && !urgencyMessageSentRef.current) {
+      // Send urgency message at 5 seconds remaining
+      if (remaining === 5 && !urgencyMessageSentRef.current) {
         generateUrgencyMessage()
       }
 
@@ -381,11 +381,20 @@ export default function ChatInterface() {
 
     // Save message to database
     try {
-      await fetch('/api/messages/save', {
+      const currentUserProfile = useStore.getState().userProfile
+      const saveResponse = await fetch('/api/messages/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [userMessage] }),
+        credentials: 'include',
+        body: JSON.stringify({ 
+          messages: [userMessage],
+          userId: currentUserProfile?.id // Send userId if available
+        }),
       })
+      if (!saveResponse.ok) {
+        const errorData = await saveResponse.json().catch(() => ({}))
+        console.error('Error saving message to database:', saveResponse.status, errorData)
+      }
     } catch (error) {
       console.error('Error saving message to database:', error)
     }
@@ -476,11 +485,20 @@ export default function ChatInterface() {
             if (index === parts.length - 2) {
               setTimeout(async () => {
                 try {
-                  await fetch('/api/messages/save', {
+                  const currentUserProfile = useStore.getState().userProfile
+                  const saveResponse = await fetch('/api/messages/save', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ messages: assistantMessages }),
+                    credentials: 'include',
+                    body: JSON.stringify({ 
+                      messages: assistantMessages,
+                      userId: currentUserProfile?.id // Send userId if available
+                    }),
                   })
+                  if (!saveResponse.ok) {
+                    const errorData = await saveResponse.json().catch(() => ({}))
+                    console.error('Error saving assistant messages to database:', saveResponse.status, errorData)
+                  }
                 } catch (error) {
                   console.error('Error saving assistant messages to database:', error)
                 }
@@ -493,11 +511,20 @@ export default function ChatInterface() {
         if (assistantMessages.length > 0) {
           setTimeout(async () => {
             try {
-              await fetch('/api/messages/save', {
+              const currentUserProfile = useStore.getState().userProfile
+              const saveResponse = await fetch('/api/messages/save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: assistantMessages }),
+                credentials: 'include',
+                body: JSON.stringify({ 
+                  messages: assistantMessages,
+                  userId: currentUserProfile?.id // Send userId if available
+                }),
               })
+              if (!saveResponse.ok) {
+                const errorData = await saveResponse.json().catch(() => ({}))
+                console.error('Error saving assistant messages to database:', saveResponse.status, errorData)
+              }
             } catch (error) {
               console.error('Error saving assistant messages to database:', error)
             }
@@ -639,7 +666,7 @@ export default function ChatInterface() {
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold ${timeRemaining <= 30
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold ${timeRemaining <= 5
                   ? 'bg-red-100 text-red-700 border border-red-300 animate-pulse'
                   : 'bg-yellow-100 text-yellow-700 border border-yellow-300'
                   }`}

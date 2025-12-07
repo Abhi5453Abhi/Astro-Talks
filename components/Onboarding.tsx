@@ -29,17 +29,17 @@ export default function Onboarding() {
   const minuteRef = useRef<HTMLDivElement>(null)
   const periodRef = useRef<HTMLDivElement>(null)
 
-  const { setUserProfile, setDailyHoroscope, setDailyHoroscopeForSign } = useStore()
+  const { setUserProfile, setDailyHoroscope, setDailyHoroscopeForSign, setCurrentScreen, freeChatClaimed } = useStore()
   // Authentication feature commented out
   // const { data: session, status: sessionStatus } = useSession()
-  
+
   // Authentication feature commented out - pre-fill name from Google sign-in
   // useEffect(() => {
   //   if (session?.user?.name && !name) {
   //     setName(session.user.name)
   //   }
   // }, [session?.user?.name]) // Removed 'name' from dependencies to allow editing
-  
+
   // Authentication feature commented out - debug session logging removed
   // Debug: Log session status
   // useEffect(() => {
@@ -72,7 +72,7 @@ export default function Onboarding() {
         scrollToDateCenter(monthRef, birthDate.month - 1)
         const years = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i)
         scrollToDateCenter(yearRef, years.indexOf(birthDate.year))
-        
+
         // After scrolling completes, sync state with what's actually in the highlight bar
         setTimeout(() => {
           // Force sync by calling handleDateScroll for all columns
@@ -89,7 +89,7 @@ export default function Onboarding() {
         const hours = Array.from({ length: 12 }, (_, i) => i + 1)
         const hourIndex = hours.indexOf(timeValue.hour)
         const periodIndex = ['AM', 'PM'].indexOf(timeValue.period)
-        
+
         // Scroll to initial positions - use requestAnimationFrame for better timing
         requestAnimationFrame(() => {
           if (hourRef.current) {
@@ -133,7 +133,7 @@ export default function Onboarding() {
               }, 50)
             }
           }
-          
+
           // After scrolling completes, sync state with what's actually in the highlight bar
           setTimeout(() => {
             // Force sync by calling handleTimeScroll for all columns
@@ -150,7 +150,7 @@ export default function Onboarding() {
   const toggleLanguage = (lang: 'english' | 'hindi' | 'punjabi') => {
     console.log('🔄 Toggling language:', lang)
     setLanguages(prev => {
-      const newLanguages = prev.includes(lang) 
+      const newLanguages = prev.includes(lang)
         ? prev.filter(l => l !== lang)
         : [...prev, lang]
       console.log('✅ Updated languages:', newLanguages)
@@ -226,12 +226,12 @@ export default function Onboarding() {
       const paddingTop = 96
       const scrollTop = container.scrollTop
       const containerHeight = container.clientHeight
-      
+
       // Calculate which item is at the center
       const viewportCenter = scrollTop + containerHeight / 2
       const firstItemCenter = paddingTop + itemHeight / 2
       const centerIndex = Math.round((viewportCenter - firstItemCenter) / itemHeight)
-      
+
       if (type === 'day') {
         const clampedIndex = Math.max(0, Math.min(centerIndex, 30))
         const selectedDay = clampedIndex + 1
@@ -272,12 +272,12 @@ export default function Onboarding() {
       const paddingTop = 96
       const scrollTop = container.scrollTop
       const containerHeight = container.clientHeight
-      
+
       // Calculate which item is at the center
       const viewportCenter = scrollTop + containerHeight / 2
       const firstItemCenter = paddingTop + itemHeight / 2
       const centerIndex = Math.round((viewportCenter - firstItemCenter) / itemHeight)
-      
+
       if (type === 'hour') {
         const hours = Array.from({ length: 12 }, (_, i) => i + 1)
         const clampedIndex = Math.max(0, Math.min(centerIndex, hours.length - 1))
@@ -337,20 +337,20 @@ export default function Onboarding() {
       }
       return isSelected ? { transform: 'scale(1) rotateX(0deg)', opacity: 1 } : { transform: 'scale(0.8) rotateX(10deg)', opacity: 0.5 }
     }
-    
+
     const scrollTop = ref === dayRef ? dateScrollPosition.day : ref === monthRef ? dateScrollPosition.month : dateScrollPosition.year
     const viewportCenter = scrollTop + containerHeight / 2
-    
+
     const itemTop = paddingTop + (index * itemHeight)
     const itemCenter = itemTop + itemHeight / 2
     const distanceFromCenter = itemCenter - viewportCenter
     const normalizedDistance = distanceFromCenter / (containerHeight / 2)
-    
+
     // Less aggressive scaling - keep items closer to full size
     const scale = Math.max(0.8, 1 - Math.abs(normalizedDistance) * 0.2)
     const opacity = Math.max(0.5, 1 - Math.abs(normalizedDistance) * 0.5)
     const rotation = normalizedDistance * 10 // Reduced rotation
-    
+
     return {
       transform: `scale(${scale}) rotateX(${rotation}deg)`,
       opacity: opacity
@@ -377,20 +377,20 @@ export default function Onboarding() {
       }
       return isSelected ? { transform: 'scale(1) rotateX(0deg)', opacity: 1 } : { transform: 'scale(0.8) rotateX(10deg)', opacity: 0.5 }
     }
-    
+
     const scrollTop = ref === hourRef ? timeScrollPosition.hour : ref === minuteRef ? timeScrollPosition.minute : timeScrollPosition.period
     const viewportCenter = scrollTop + containerHeight / 2
-    
+
     const itemTop = paddingTop + (index * itemHeight)
     const itemCenter = itemTop + itemHeight / 2
     const distanceFromCenter = itemCenter - viewportCenter
     const normalizedDistance = distanceFromCenter / (containerHeight / 2)
-    
+
     // Less aggressive scaling - keep items closer to full size
     const scale = Math.max(0.8, 1 - Math.abs(normalizedDistance) * 0.2)
     const opacity = Math.max(0.5, 1 - Math.abs(normalizedDistance) * 0.5)
     const rotation = normalizedDistance * 10 // Reduced rotation
-    
+
     return {
       transform: `scale(${scale}) rotateX(${rotation}deg)`,
       opacity: opacity
@@ -419,12 +419,12 @@ export default function Onboarding() {
       gender,
       languages
     })
-    
+
     setIsLoading(true)
-    
+
     // Simulate processing
     await new Promise(resolve => setTimeout(resolve, 1000))
-    
+
     const zodiacSign = getZodiacSign(dateOfBirth)
     console.log('✨ Calculated zodiac sign:', zodiacSign)
 
@@ -475,22 +475,26 @@ export default function Onboarding() {
     })()
 
     setUserProfile(profile)
-    
+
     // Authentication feature commented out - save to database without auth requirement
     // Save to database (authentication check removed)
     try {
       const response = await fetch('/api/users/save', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
         body: JSON.stringify(profile),
       })
-      
+
       if (response.ok) {
         const data = await response.json()
         console.log('✅ User profile saved to database successfully!', data)
+        // Store the user ID if returned
+        if (data.user && data.user.id) {
+          setUserProfile({ ...profile, id: data.user.id })
+        }
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
         console.error('❌ Failed to save user profile to database:', errorData)
@@ -500,16 +504,21 @@ export default function Onboarding() {
       console.error('❌ Error saving user profile to database:', error)
       // Continue even if database save fails - data is in localStorage
     }
-    
+
     // Authentication feature commented out - original auth check removed
     // if (session?.user?.id && sessionStatus === 'authenticated') {
     //   ...
     // } else {
     //   console.warn('⚠️ User not authenticated, skipping database save.')
     // }
-    
+
     console.log('✅ User profile saved successfully!')
     setIsLoading(false)
+
+    // Navigate to appropriate screen after onboarding completes
+    // If free chat already claimed, go directly to home
+    // Otherwise, show the free chat option
+    setCurrentScreen(freeChatClaimed ? 'home' : 'free-chat-option')
   }
 
   const steps = [
@@ -535,23 +544,20 @@ export default function Onboarding() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className={`w-full group relative overflow-hidden ${
-                  languages.includes(lang.value as any)
-                    ? 'bg-gradient-to-r from-yellow-400/20 via-yellow-500/30 to-yellow-400/20 border-2 border-yellow-400/50 shadow-lg shadow-yellow-400/20'
-                    : 'bg-slate-800/40 border border-slate-700/30 hover:border-slate-600/50 hover:bg-slate-800/60'
-                } backdrop-blur-sm rounded-2xl p-5 transition-all duration-300`}
+                className={`w-full group relative overflow-hidden ${languages.includes(lang.value as any)
+                  ? 'bg-gradient-to-r from-yellow-400/20 via-yellow-500/30 to-yellow-400/20 border-2 border-yellow-400/50 shadow-lg shadow-yellow-400/20'
+                  : 'bg-slate-800/40 border border-slate-700/30 hover:border-slate-600/50 hover:bg-slate-800/60'
+                  } backdrop-blur-sm rounded-2xl p-5 transition-all duration-300`}
               >
                 <div className="flex items-center justify-between">
-                  <span className={`text-lg font-medium tracking-wide ${
-                    languages.includes(lang.value as any) ? 'text-yellow-400' : 'text-gray-300 group-hover:text-white'
-                  } transition-colors duration-300`}>
+                  <span className={`text-lg font-medium tracking-wide ${languages.includes(lang.value as any) ? 'text-yellow-400' : 'text-gray-300 group-hover:text-white'
+                    } transition-colors duration-300`}>
                     {lang.label}
                   </span>
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                    languages.includes(lang.value as any)
-                      ? 'border-yellow-400 bg-yellow-400/20'
-                      : 'border-slate-600 group-hover:border-slate-500'
-                  }`}>
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${languages.includes(lang.value as any)
+                    ? 'border-yellow-400 bg-yellow-400/20'
+                    : 'border-slate-600 group-hover:border-slate-500'
+                    }`}>
                     {languages.includes(lang.value as any) && (
                       <motion.svg
                         initial={{ scale: 0 }}
@@ -574,11 +580,10 @@ export default function Onboarding() {
             disabled={languages.length === 0}
             whileHover={{ scale: languages.length > 0 ? 1.02 : 1 }}
             whileTap={{ scale: languages.length > 0 ? 0.98 : 1 }}
-            className={`w-full mt-10 py-4 px-8 rounded-2xl font-semibold text-base tracking-wide transition-all duration-300 ${
-              languages.length > 0
-                ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 text-slate-900 shadow-xl shadow-yellow-500/30 hover:shadow-2xl hover:shadow-yellow-500/40'
-                : 'bg-slate-700/30 text-gray-500 cursor-not-allowed'
-            }`}
+            className={`w-full mt-10 py-4 px-8 rounded-2xl font-semibold text-base tracking-wide transition-all duration-300 ${languages.length > 0
+              ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 text-slate-900 shadow-xl shadow-yellow-500/30 hover:shadow-2xl hover:shadow-yellow-500/40'
+              : 'bg-slate-700/30 text-gray-500 cursor-not-allowed'
+              }`}
           >
             Continue
           </motion.button>
@@ -624,11 +629,10 @@ export default function Onboarding() {
               disabled={!name.trim()}
               whileHover={{ scale: name.trim() ? 1.02 : 1 }}
               whileTap={{ scale: name.trim() ? 0.98 : 1 }}
-              className={`flex-1 py-4 px-6 rounded-2xl font-semibold text-base tracking-wide transition-all duration-300 ${
-                name.trim()
-                  ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 text-slate-900 shadow-xl shadow-yellow-500/30 hover:shadow-2xl hover:shadow-yellow-500/40'
-                  : 'bg-slate-700/30 text-gray-500 cursor-not-allowed'
-              }`}
+              className={`flex-1 py-4 px-6 rounded-2xl font-semibold text-base tracking-wide transition-all duration-300 ${name.trim()
+                ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 text-slate-900 shadow-xl shadow-yellow-500/30 hover:shadow-2xl hover:shadow-yellow-500/40'
+                : 'bg-slate-700/30 text-gray-500 cursor-not-allowed'
+                }`}
             >
               Continue
             </motion.button>
@@ -655,7 +659,7 @@ export default function Onboarding() {
                 ref={dayRef}
                 className="h-60 overflow-y-scroll scrollbar-hide snap-y snap-mandatory relative"
                 onScroll={() => handleDateScroll('day')}
-                style={{ 
+                style={{
                   scrollBehavior: 'smooth',
                   perspective: '1000px',
                   transformStyle: 'preserve-3d'
@@ -667,11 +671,10 @@ export default function Onboarding() {
                   return (
                     <div
                       key={day}
-                      className={`h-12 flex items-center justify-center text-sm sm:text-lg font-light snap-center cursor-pointer transition-all relative z-10 ${
-                        day === birthDate.day
-                          ? 'text-yellow-400 font-medium'
-                          : 'text-gray-500'
-                      }`}
+                      className={`h-12 flex items-center justify-center text-sm sm:text-lg font-light snap-center cursor-pointer transition-all relative z-10 ${day === birthDate.day
+                        ? 'text-yellow-400 font-medium'
+                        : 'text-gray-500'
+                        }`}
                       onClick={() => {
                         const newDate = { ...birthDate, day }
                         setBirthDate(newDate)
@@ -702,7 +705,7 @@ export default function Onboarding() {
                 ref={monthRef}
                 className="h-60 overflow-y-scroll scrollbar-hide snap-y snap-mandatory relative"
                 onScroll={() => handleDateScroll('month')}
-                style={{ 
+                style={{
                   scrollBehavior: 'smooth',
                   perspective: '1000px',
                   transformStyle: 'preserve-3d'
@@ -714,11 +717,10 @@ export default function Onboarding() {
                   return (
                     <div
                       key={month}
-                      className={`h-12 flex items-center justify-center text-xs sm:text-base md:text-lg font-light snap-center cursor-pointer transition-all relative z-10 ${
-                        index + 1 === birthDate.month
-                          ? 'text-yellow-400 font-medium'
-                          : 'text-gray-500'
-                      }`}
+                      className={`h-12 flex items-center justify-center text-xs sm:text-base md:text-lg font-light snap-center cursor-pointer transition-all relative z-10 ${index + 1 === birthDate.month
+                        ? 'text-yellow-400 font-medium'
+                        : 'text-gray-500'
+                        }`}
                       onClick={() => {
                         const newDate = { ...birthDate, month: index + 1 }
                         setBirthDate(newDate)
@@ -749,7 +751,7 @@ export default function Onboarding() {
                 ref={yearRef}
                 className="h-60 overflow-y-scroll scrollbar-hide snap-y snap-mandatory relative"
                 onScroll={() => handleDateScroll('year')}
-                style={{ 
+                style={{
                   scrollBehavior: 'smooth',
                   perspective: '1000px',
                   transformStyle: 'preserve-3d'
@@ -761,11 +763,10 @@ export default function Onboarding() {
                   return (
                     <div
                       key={year}
-                      className={`h-12 flex items-center justify-center text-sm sm:text-lg font-light snap-center cursor-pointer transition-all relative z-10 ${
-                        year === birthDate.year
-                          ? 'text-yellow-400 font-medium'
-                          : 'text-gray-500'
-                      }`}
+                      className={`h-12 flex items-center justify-center text-sm sm:text-lg font-light snap-center cursor-pointer transition-all relative z-10 ${year === birthDate.year
+                        ? 'text-yellow-400 font-medium'
+                        : 'text-gray-500'
+                        }`}
                       onClick={() => {
                         const newDate = { ...birthDate, year }
                         setBirthDate(newDate)
@@ -803,11 +804,10 @@ export default function Onboarding() {
               disabled={!dateOfBirth}
               whileHover={{ scale: dateOfBirth ? 1.02 : 1 }}
               whileTap={{ scale: dateOfBirth ? 0.98 : 1 }}
-              className={`flex-1 py-4 px-6 rounded-2xl font-semibold text-base tracking-wide transition-all duration-300 ${
-                dateOfBirth
-                  ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 text-slate-900 shadow-xl shadow-yellow-500/30 hover:shadow-2xl hover:shadow-yellow-500/40'
-                  : 'bg-slate-700/30 text-gray-500 cursor-not-allowed'
-              }`}
+              className={`flex-1 py-4 px-6 rounded-2xl font-semibold text-base tracking-wide transition-all duration-300 ${dateOfBirth
+                ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 text-slate-900 shadow-xl shadow-yellow-500/30 hover:shadow-2xl hover:shadow-yellow-500/40'
+                : 'bg-slate-700/30 text-gray-500 cursor-not-allowed'
+                }`}
             >
               Continue
             </motion.button>
@@ -834,7 +834,7 @@ export default function Onboarding() {
                   ref={hourRef}
                   className="h-60 overflow-y-scroll scrollbar-hide snap-y snap-mandatory relative"
                   onScroll={() => handleTimeScroll('hour')}
-                  style={{ 
+                  style={{
                     scrollBehavior: 'smooth',
                     perspective: '1000px',
                     transformStyle: 'preserve-3d'
@@ -846,11 +846,10 @@ export default function Onboarding() {
                     return (
                       <div
                         key={hour}
-                        className={`h-12 flex items-center justify-center text-sm sm:text-lg font-light snap-center cursor-pointer transition-all relative z-10 ${
-                          hour === timeValue.hour
-                            ? 'text-yellow-400 font-medium'
-                            : 'text-gray-500'
-                        }`}
+                        className={`h-12 flex items-center justify-center text-sm sm:text-lg font-light snap-center cursor-pointer transition-all relative z-10 ${hour === timeValue.hour
+                          ? 'text-yellow-400 font-medium'
+                          : 'text-gray-500'
+                          }`}
                         onClick={() => {
                           const newTime = { ...timeValue, hour }
                           setTimeValue(newTime)
@@ -881,7 +880,7 @@ export default function Onboarding() {
                   ref={minuteRef}
                   className="h-60 overflow-y-scroll scrollbar-hide snap-y snap-mandatory relative"
                   onScroll={() => handleTimeScroll('minute')}
-                  style={{ 
+                  style={{
                     scrollBehavior: 'smooth',
                     perspective: '1000px',
                     transformStyle: 'preserve-3d'
@@ -893,11 +892,10 @@ export default function Onboarding() {
                     return (
                       <div
                         key={minute}
-                        className={`h-12 flex items-center justify-center text-sm sm:text-lg font-light snap-center cursor-pointer transition-all relative z-10 ${
-                          minute === timeValue.minute
-                            ? 'text-yellow-400 font-medium'
-                            : 'text-gray-500'
-                        }`}
+                        className={`h-12 flex items-center justify-center text-sm sm:text-lg font-light snap-center cursor-pointer transition-all relative z-10 ${minute === timeValue.minute
+                          ? 'text-yellow-400 font-medium'
+                          : 'text-gray-500'
+                          }`}
                         onClick={() => {
                           const newTime = { ...timeValue, minute }
                           setTimeValue(newTime)
@@ -928,7 +926,7 @@ export default function Onboarding() {
                   ref={periodRef}
                   className="h-60 overflow-y-scroll scrollbar-hide snap-y snap-mandatory relative"
                   onScroll={() => handleTimeScroll('period')}
-                  style={{ 
+                  style={{
                     scrollBehavior: 'smooth',
                     perspective: '1000px',
                     transformStyle: 'preserve-3d'
@@ -940,11 +938,10 @@ export default function Onboarding() {
                     return (
                       <div
                         key={period}
-                        className={`h-12 flex items-center justify-center text-sm sm:text-lg font-light snap-center cursor-pointer transition-all relative z-10 ${
-                          period === timeValue.period
-                            ? 'text-yellow-400 font-medium'
-                            : 'text-gray-500'
-                        }`}
+                        className={`h-12 flex items-center justify-center text-sm sm:text-lg font-light snap-center cursor-pointer transition-all relative z-10 ${period === timeValue.period
+                          ? 'text-yellow-400 font-medium'
+                          : 'text-gray-500'
+                          }`}
                         onClick={() => {
                           const newTime = { ...timeValue, period: period as 'AM' | 'PM' }
                           setTimeValue(newTime)
@@ -1019,11 +1016,10 @@ export default function Onboarding() {
               disabled={!birthTime && !unknownBirthTime}
               whileHover={{ scale: (birthTime || unknownBirthTime) ? 1.02 : 1 }}
               whileTap={{ scale: (birthTime || unknownBirthTime) ? 0.98 : 1 }}
-              className={`flex-1 py-4 px-6 rounded-2xl font-semibold text-base tracking-wide transition-all duration-300 ${
-                (birthTime || unknownBirthTime)
-                  ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 text-slate-900 shadow-xl shadow-yellow-500/30 hover:shadow-2xl hover:shadow-yellow-500/40'
-                  : 'bg-slate-700/30 text-gray-500 cursor-not-allowed'
-              }`}
+              className={`flex-1 py-4 px-6 rounded-2xl font-semibold text-base tracking-wide transition-all duration-300 ${(birthTime || unknownBirthTime)
+                ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 text-slate-900 shadow-xl shadow-yellow-500/30 hover:shadow-2xl hover:shadow-yellow-500/40'
+                : 'bg-slate-700/30 text-gray-500 cursor-not-allowed'
+                }`}
             >
               Continue
             </motion.button>
@@ -1054,26 +1050,23 @@ export default function Onboarding() {
                 transition={{ delay: index * 0.1 }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className={`w-full group relative overflow-hidden ${
-                  gender === g.value
-                    ? 'bg-gradient-to-r from-yellow-400/20 via-yellow-500/30 to-yellow-400/20 border-2 border-yellow-400/50 shadow-lg shadow-yellow-400/20'
-                    : 'bg-slate-800/40 border border-slate-700/30 hover:border-slate-600/50 hover:bg-slate-800/60'
-                } backdrop-blur-sm rounded-2xl p-5 transition-all duration-300`}
+                className={`w-full group relative overflow-hidden ${gender === g.value
+                  ? 'bg-gradient-to-r from-yellow-400/20 via-yellow-500/30 to-yellow-400/20 border-2 border-yellow-400/50 shadow-lg shadow-yellow-400/20'
+                  : 'bg-slate-800/40 border border-slate-700/30 hover:border-slate-600/50 hover:bg-slate-800/60'
+                  } backdrop-blur-sm rounded-2xl p-5 transition-all duration-300`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <span className="text-2xl">{g.icon}</span>
-                    <span className={`text-lg font-medium tracking-wide ${
-                      gender === g.value ? 'text-yellow-400' : 'text-gray-300 group-hover:text-white'
-                    } transition-colors duration-300`}>
+                    <span className={`text-lg font-medium tracking-wide ${gender === g.value ? 'text-yellow-400' : 'text-gray-300 group-hover:text-white'
+                      } transition-colors duration-300`}>
                       {g.label}
                     </span>
                   </div>
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                    gender === g.value
-                      ? 'border-yellow-400 bg-yellow-400/20'
-                      : 'border-slate-600 group-hover:border-slate-500'
-                  }`}>
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${gender === g.value
+                    ? 'border-yellow-400 bg-yellow-400/20'
+                    : 'border-slate-600 group-hover:border-slate-500'
+                    }`}>
                     {gender === g.value && (
                       <motion.svg
                         initial={{ scale: 0 }}
@@ -1105,11 +1098,10 @@ export default function Onboarding() {
               disabled={isLoading}
               whileHover={{ scale: isLoading ? 1 : 1.02 }}
               whileTap={{ scale: isLoading ? 1 : 0.98 }}
-              className={`flex-1 py-4 px-6 rounded-2xl font-semibold text-base tracking-wide transition-all duration-300 ${
-                !isLoading
-                  ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 text-slate-900 shadow-xl shadow-yellow-500/30 hover:shadow-2xl hover:shadow-yellow-500/40'
-                  : 'bg-slate-700/30 text-gray-500 cursor-not-allowed'
-              }`}
+              className={`flex-1 py-4 px-6 rounded-2xl font-semibold text-base tracking-wide transition-all duration-300 ${!isLoading
+                ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 text-slate-900 shadow-xl shadow-yellow-500/30 hover:shadow-2xl hover:shadow-yellow-500/40'
+                : 'bg-slate-700/30 text-gray-500 cursor-not-allowed'
+                }`}
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -1176,13 +1168,12 @@ export default function Onboarding() {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: index * 0.1 }}
-                className={`h-1 rounded-full transition-all duration-300 ${
-                  index === step
-                    ? 'w-10 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400'
-                    : index < step
+                className={`h-1 rounded-full transition-all duration-300 ${index === step
+                  ? 'w-10 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400'
+                  : index < step
                     ? 'w-2 bg-yellow-400/40'
                     : 'w-2 bg-slate-700/30'
-                }`}
+                  }`}
               />
             ))}
           </div>
