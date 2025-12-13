@@ -53,6 +53,9 @@ export default function ChatInterface() {
     placeOfBirth?: string
     timeOfBirth?: string
   }>({})
+  const [selectedDay, setSelectedDay] = useState<string>('')
+  const [selectedMonth, setSelectedMonth] = useState<string>('')
+  const [selectedYear, setSelectedYear] = useState<string>('')
   const detailsCollectionStartedRef = useRef(false)
 
   // Minimum balance required: 10 minutes at ₹20/min = ₹200
@@ -63,6 +66,7 @@ export default function ChatInterface() {
   // Also block if we're collecting details (user can still respond to detail questions)
   const isChatBlocked = (freeChatExpired && !isPaidUser) || hasInsufficientBalance
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const hasGreetedRef = useRef(false)
   const followUpTimeoutsRef = useRef<NodeJS.Timeout[]>([])
   const inactivityTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -379,7 +383,7 @@ Place of Birth: ${userProfile.placeOfBirth || 'Not specified'}`
       addMessage({
         id: `ask-dob-${Date.now()}`,
         role: 'assistant',
-        content: 'Please share your date of birth (DD-MM-YYYY format).',
+        content: 'Please select your date of birth.',
         timestamp: Date.now(),
       })
     } else {
@@ -649,7 +653,7 @@ Date of Birth: ${formattedDOB}`
             addMessage({
               id: `ask-dob-${Date.now()}`,
               role: 'assistant',
-              content: 'Please share your date of birth (DD-MM-YYYY format).',
+              content: 'Please select your date of birth.',
               timestamp: Date.now(),
             })
           } else {
@@ -1130,26 +1134,136 @@ Date of Birth: ${formattedDOB}`
         animate={{ y: 0 }}
         className="bg-slate-800/90 backdrop-blur-sm border-t border-slate-700/50 p-4 shadow-lg relative z-10"
       >
-        <div className="max-w-4xl mx-auto flex gap-4">
-          <textarea
-            value={input}
-            onChange={handleInputChange}
-            onKeyPress={handleKeyPress}
-            placeholder={isChatBlocked ? "Recharge to continue chatting..." : collectingDetails && currentDetailStep ? `Please provide your ${currentDetailStep === 'dob' ? 'date of birth' : currentDetailStep === 'placeOfBirth' ? 'place of birth' : currentDetailStep === 'timeOfBirth' ? 'time of birth' : currentDetailStep}...` : "Ask Astrologer anything..."}
-            rows={1}
-            disabled={isChatBlocked}
-            className="flex-1 px-6 py-4 bg-slate-700/50 border border-slate-600/50 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all resize-none disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ minHeight: '60px', maxHeight: '120px' }}
-          />
-          <button
-            onClick={sendMessage}
-            disabled={!input.trim() || isTyping || isChatBlocked}
-            className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 rounded-2xl font-semibold transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
-          >
-            Send
-          </button>
+        {/* Input section */}
+        <div className="max-w-4xl mx-auto">
+          {/* Show scroll-wheel date picker when asking for DOB */}
+          {collectingDetails && currentDetailStep === 'dob' && (
+            <div className="mb-3 p-4 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-yellow-500/30 shadow-lg">
+              <label className="block text-yellow-400 text-sm font-semibold mb-3 text-center">
+                📅 Select your date of birth
+              </label>
+              <div className="flex gap-2 justify-center items-center">
+                {/* Day Picker */}
+                <div className="flex-1 max-w-[100px]">
+                  <label className="block text-slate-400 text-xs mb-1 text-center">Day</label>
+                  <select
+                    value={selectedDay}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 text-center font-medium cursor-pointer hover:bg-slate-650 transition-colors"
+                    onChange={(e) => setSelectedDay(e.target.value)}
+                  >
+                    <option value="">DD</option>
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Month Picker */}
+                <div className="flex-1 max-w-[120px]">
+                  <label className="block text-slate-400 text-xs mb-1 text-center">Month</label>
+                  <select
+                    value={selectedMonth}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 text-center font-medium cursor-pointer hover:bg-slate-650 transition-colors"
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                  >
+                    <option value="">MM</option>
+                    {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((m, i) => (
+                      <option key={i + 1} value={i + 1}>{m}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Year Picker */}
+                <div className="flex-1 max-w-[100px]">
+                  <label className="block text-slate-400 text-xs mb-1 text-center">Year</label>
+                  <select
+                    value={selectedYear}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 text-center font-medium cursor-pointer hover:bg-slate-650 transition-colors"
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                  >
+                    <option value="">YYYY</option>
+                    {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map(y => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Done Button */}
+              <button
+                onClick={() => {
+                  if (selectedDay && selectedMonth && selectedYear) {
+                    const formattedDate = `${selectedDay.padStart(2, '0')}-${selectedMonth.padStart(2, '0')}-${selectedYear}`
+                    handleDetailsInput(formattedDate)
+                    // Reset selections
+                    setSelectedDay('')
+                    setSelectedMonth('')
+                    setSelectedYear('')
+                  }
+                }}
+                disabled={!selectedDay || !selectedMonth || !selectedYear}
+                className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 rounded-xl font-bold transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
+              >
+                Done
+              </button>
+            </div>
+          )}
+
+          {/* Show regular input only when NOT collecting DOB */}
+          {!(collectingDetails && currentDetailStep === 'dob') && (
+            <div className="flex gap-2 items-end">
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyPress}
+                placeholder={
+                  collectingDetails
+                    ? (currentDetailStep === 'dob' ? 'Select date above...' : 'Type your answer...')
+                    : isChatBlocked
+                      ? 'Chat ended. Please recharge to continue.'
+                      : 'Ask Astrologer anything...'
+                }
+                disabled={isChatBlocked}
+                className="flex-1 px-4 py-3 rounded-lg bg-slate-700 text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                rows={1}
+                style={{
+                  minHeight: '48px',
+                  maxHeight: '120px',
+                }}
+              />
+              <button
+                onClick={sendMessage}
+                disabled={!input.trim() || isTyping || isChatBlocked}
+                className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-gray-900 rounded-2xl font-semibold transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
+              >
+                Send
+              </button>
+            </div>
+          )}
         </div>
       </motion.div>
+
+      {/* Insufficient Balance Banner (appears when balance is low) */}
+      {hasInsufficientBalance && (
+        <motion.div
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="absolute bottom-0 left-0 right-0 bg-red-500/95 backdrop-blur-sm text-white p-6 text-center z-50 border-t-4 border-red-600 shadow-2xl"
+        >
+          <div className="max-w-4xl mx-auto">
+            <p className="text-lg font-semibold mb-2">
+              Your balance is low! Recharge to continue your chat.
+            </p>
+            <button
+              onClick={() => setShowPaymentModal(true)}
+              className="bg-white text-red-700 px-6 py-3 rounded-full font-bold text-base hover:bg-gray-100 transition-colors shadow-md"
+            >
+              Recharge Now
+            </button>
+          </div>
+        </motion.div>
+      )}
 
       {/* Continue Chat Banner */}
       <AnimatePresence>
