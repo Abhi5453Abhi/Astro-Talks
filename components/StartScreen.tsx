@@ -15,8 +15,8 @@ export default function StartScreen() {
   // const [showSignIn, setShowSignIn] = useState(false)
 
   const handleStartNow = () => {
-    // Proceed directly to onboarding without authentication
-    setCurrentScreen('onboarding')
+    // Skip onboarding and go directly to free chat option screen
+    setCurrentScreen('free-chat-option')
   }
 
   // Authentication feature commented out - no auth checks needed

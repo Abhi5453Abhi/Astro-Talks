@@ -477,33 +477,35 @@ export default function Onboarding() {
     setUserProfile(profile)
 
     // Authentication feature commented out - save to database without auth requirement
-    // Save to database (authentication check removed)
-    try {
-      const response = await fetch('/api/users/save', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(profile),
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        console.log('✅ User profile saved to database successfully!', data)
-        // Store the user ID if returned
-        if (data.user && data.user.id) {
-          setUserProfile({ ...profile, id: data.user.id })
+    // Save to database in background (non-blocking)
+    // Don't await - let user proceed immediately while save happens in background
+    fetch('/api/users/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(profile),
+    })
+      .then(async (response) => {
+        if (response.ok) {
+          const data = await response.json()
+          console.log('✅ User profile saved to database successfully!', data)
+          // Store the user ID if returned (update profile asynchronously)
+          if (data.user && data.user.id) {
+            const { setUserProfile: updateProfile } = useStore.getState()
+            updateProfile({ ...profile, id: data.user.id })
+          }
+        } else {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+          console.error('❌ Failed to save user profile to database:', errorData)
+          console.error('Response status:', response.status, response.statusText)
         }
-      } else {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('❌ Failed to save user profile to database:', errorData)
-        console.error('Response status:', response.status, response.statusText)
-      }
-    } catch (error) {
-      console.error('❌ Error saving user profile to database:', error)
-      // Continue even if database save fails - data is in localStorage
-    }
+      })
+      .catch(error => {
+        console.error('❌ Error saving user profile to database:', error)
+        // Continue even if database save fails - data is in localStorage
+      })
 
     // Authentication feature commented out - original auth check removed
     // if (session?.user?.id && sessionStatus === 'authenticated') {

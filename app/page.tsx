@@ -48,14 +48,27 @@ export default function Home() {
   //   }
   // }, [mounted, status, userProfile, currentScreen, setCurrentScreen])
 
-  // Ensure start screen shows for new users
+  // Skip onboarding - go directly to free chat option for new users
   useEffect(() => {
-    // If no user profile exists and we're not already in onboarding or start, go to start
-    if (!userProfile && currentScreen !== 'start' && currentScreen !== 'onboarding') {
-      console.log('🔄 No user profile found, resetting to start screen')
-      setCurrentScreen('start')
+    if (!mounted) return
+
+    // If user tries to go to onboarding, redirect to free-chat-option instead
+    if (currentScreen === 'onboarding') {
+      console.log('🔄 Skipping onboarding, redirecting to free chat option')
+      setCurrentScreen('free-chat-option')
+      return
     }
-  }, [userProfile, currentScreen, setCurrentScreen])
+
+    // If no user profile exists and we're on start screen, go directly to free-chat-option
+    if (!userProfile && currentScreen === 'start') {
+      console.log('🔄 No user profile found, going directly to free chat option (skipping start screen)')
+      setCurrentScreen('free-chat-option')
+      return
+    }
+
+    // Don't redirect from 'free-chat' screen - let ChatInterface handle the questionnaire
+    // ChatInterface will collect user details through questionnaire when free chat starts
+  }, [mounted, userProfile, currentScreen, setCurrentScreen])
 
   // Auto-correct screen if free chat was claimed but screen is still set to free-chat-option
   // Use a ref to prevent infinite loops and ensure redirect happens smoothly
@@ -145,124 +158,17 @@ export default function Home() {
 
   const handleStartFreeChat = async () => {
     console.log('🎁 Starting free chat...')
+
+    // Don't create default profile - let ChatInterface collect details through questionnaire
+    // ChatInterface will check if profile is incomplete and start the questionnaire flow
+
     setFreeChatClaimed(true) // Mark free chat as claimed
     setFreeChatActive(true) // Set active immediately to prevent "insufficient balance" flash
     setCurrentScreen('free-chat') // Use 'free-chat' to go directly to ChatInterface
 
-    // Format user details message
-    if (userProfile) {
-      const { addMessage, messages } = useStore.getState()
-
-      // Check if user details message already exists
-      const hasUserDetails = messages.some(msg => msg.id && msg.id.startsWith('user-details-'))
-
-      if (hasUserDetails) {
-        console.log('⚠️ User details already added, skipping to chat start...')
-        // Just start the timer and skip adding messages again
-        setFreeChatActive(true)
-        setFreeChatStartTime(Date.now())
-        return
-      }
-
-      if (!userProfile.dateOfBirth) {
-        console.error('Date of birth missing for free chat')
-        return
-      }
-
-      const birthDate = new Date(userProfile.dateOfBirth)
-      const day = birthDate.getDate().toString().padStart(2, '0')
-      const month = birthDate.toLocaleDateString('en-US', { month: 'long' })
-      const year = birthDate.getFullYear()
-      const formattedDOB = `${day}-${month}-${year}`
-
-      const userDetailsMessage = `Hi,
-Below are my details:
-Name: ${userProfile.name}
-Gender: ${userProfile.gender ? userProfile.gender.charAt(0).toUpperCase() + userProfile.gender.slice(1) : 'Not specified'}
-Date of Birth: ${formattedDOB}
-Time of Birth: ${userProfile.birthTime || 'Not specified'}
-Place of Birth: Not specified`
-
-      // Add user details as user message
-      addMessage({
-        id: `user-details-${Date.now()}`,
-        role: 'user',
-        content: userDetailsMessage,
-        timestamp: Date.now(),
-      })
-
-      // Wait a bit, then add automated messages
-      setTimeout(() => {
-        addMessage({
-          id: `welcome-${Date.now()}`,
-          role: 'assistant',
-          content: 'Welcome to Astronova!',
-          timestamp: Date.now(),
-        })
-      }, 500)
-
-      setTimeout(() => {
-        addMessage({
-          id: `joining-${Date.now()}`,
-          role: 'assistant',
-          content: 'Astrologer will join within 10 seconds',
-          timestamp: Date.now(),
-        })
-      }, 1000)
-
-      setTimeout(() => {
-        addMessage({
-          id: `share-question-${Date.now()}`,
-          role: 'assistant',
-          content: 'Please share your question in the meanwhile.',
-          timestamp: Date.now(),
-        })
-      }, 1500)
-
-      setTimeout(() => {
-        const joinedMessage = {
-          id: `joined-${Date.now()}`,
-          role: 'system' as const,
-          content: `${ASTROLOGER.name} has joined`,
-          timestamp: Date.now(),
-        }
-        addMessage(joinedMessage)
-
-        // Save system message to database
-        const currentUserProfile = useStore.getState().userProfile
-        fetch('/api/messages/save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ 
-            messages: [joinedMessage],
-            userId: currentUserProfile?.id // Send userId if available
-          }),
-        })
-        .then(async (response) => {
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}))
-            console.error('Error saving system message to database:', response.status, errorData)
-          }
-        })
-        .catch(error => {
-          console.error('Error saving system message to database:', error)
-        })
-
-        // Now start the free chat timer
-        setFreeChatStartTime(Date.now())
-      }, 2500)
-
-      // Astrologer greeting in Hindi
-      setTimeout(() => {
-        addMessage({
-          id: `greeting-${Date.now()}`,
-          role: 'assistant',
-          content: 'Jay Shree Sitaram ji 🙏',
-          timestamp: Date.now(),
-        })
-      }, 4000)
-    }
+    // Details collection and timer start will be handled by ChatInterface component
+    // ChatInterface will ask for name, DOB, gender, place of birth, and time of birth
+    // ONLY after questionnaire completes will welcome messages and timer start
   }
 
   const handleSkip = () => {
@@ -284,9 +190,8 @@ Place of Birth: Not specified`
       {currentScreen === 'start' ? (
         <StartScreen />
       ) : currentScreen === 'onboarding' ? (
-        <Onboarding />
-      ) : !userProfile ? (
-        <Onboarding />
+        // Skip onboarding - show free chat option instead (redirect handled in useEffect)
+        <FreeChatOption onStartFreeChat={handleStartFreeChat} onSkip={handleSkip} />
       ) : currentScreen === 'home' ? (
         <HomeScreen />
       ) : currentScreen === 'chat' ? (
