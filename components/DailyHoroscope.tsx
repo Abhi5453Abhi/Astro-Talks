@@ -106,7 +106,7 @@ export default function DailyHoroscope() {
 
   useEffect(() => {
     if (!userProfile) {
-      setCurrentScreen('onboarding')
+      setCurrentScreen('free-chat-option')
       return
     }
 

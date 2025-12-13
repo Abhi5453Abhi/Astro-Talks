@@ -112,8 +112,8 @@ export default function HomeScreen() {
   const handleChatWithAstrologer = () => {
     // Check if user has completed onboarding
     if (!userProfile || !userProfile.dateOfBirth) {
-      // If no profile, go to onboarding first
-      setCurrentScreen('onboarding')
+      // If no profile, go to free-chat-option (onboarding skipped)
+      setCurrentScreen('free-chat-option')
       return
     }
     

@@ -172,10 +172,10 @@ export default function FreeKundli() {
         >
           <p className="text-white text-lg mb-4">Please complete your profile first</p>
           <button
-            onClick={() => setCurrentScreen('onboarding')}
+            onClick={() => setCurrentScreen('free-chat-option')}
             className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 font-bold rounded-full"
           >
-            Complete Profile
+            Get Started
           </button>
         </motion.div>
       </div>

@@ -27,10 +27,12 @@ export default function ChatInterface() {
     freeChatExpired,
     setFreeChatActive,
     setFreeChatExpired,
+    setFreeChatStartTime,
     setCurrentScreen,
     walletBalance,
     syncFromDatabase,
-    syncMessagesToDatabase
+    syncMessagesToDatabase,
+    setUserProfile
   } = useStore()
   // Authentication feature commented out
   // const { status } = useSession()
@@ -41,11 +43,24 @@ export default function ChatInterface() {
   const [showVideoCall, setShowVideoCall] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState(120) // 2 minutes
 
+  // User details collection state
+  const [collectingDetails, setCollectingDetails] = useState(false)
+  const [currentDetailStep, setCurrentDetailStep] = useState<'name' | 'dob' | 'gender' | 'placeOfBirth' | 'timeOfBirth' | null>(null)
+  const [collectedDetails, setCollectedDetails] = useState<{
+    name?: string
+    dateOfBirth?: string
+    gender?: string
+    placeOfBirth?: string
+    timeOfBirth?: string
+  }>({})
+  const detailsCollectionStartedRef = useRef(false)
+
   // Minimum balance required: 10 minutes at ₹20/min = ₹200
   const MINIMUM_BALANCE = 200
   const hasInsufficientBalance = walletBalance < MINIMUM_BALANCE && !freeChatActive && !isPaidUser
 
   // Check if chat is blocked (free chat expired or insufficient balance)
+  // Also block if we're collecting details (user can still respond to detail questions)
   const isChatBlocked = (freeChatExpired && !isPaidUser) || hasInsufficientBalance
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const hasGreetedRef = useRef(false)
@@ -200,8 +215,13 @@ export default function ChatInterface() {
   }
 
   // Start follow-ups when greeting message appears (but only if user hasn't replied yet)
+  // IMPORTANT: Don't start follow-ups if we're collecting details (questionnaire)
   useEffect(() => {
     if (!freeChatActive || hasStartedFollowUpsRef.current || userHasRepliedRef.current) return
+    if (collectingDetails) {
+      console.log('📝 Collecting details, skipping follow-ups')
+      return
+    }
 
     // Check if greeting message exists
     const hasGreeting = messages.some(msg => msg.id && msg.id.startsWith('greeting-'))
@@ -224,7 +244,7 @@ export default function ChatInterface() {
       hasStartedFollowUpsRef.current = true
       startFollowUpQuestions()
     }
-  }, [messages, freeChatActive, addMessage])
+  }, [messages, freeChatActive, addMessage, collectingDetails])
 
   // Cleanup timeouts on unmount or when free chat ends
   useEffect(() => {
@@ -259,6 +279,268 @@ export default function ChatInterface() {
     loadFromDatabase()
   }, [syncFromDatabase])
 
+  // Check if user details are complete and start collection if needed
+  // This MUST run before any greeting or welcome messages
+  useEffect(() => {
+    // Only collect details if free chat is active and timer hasn't started
+    if (!freeChatActive || freeChatStartTime || isPaidUser) return
+    if (detailsCollectionStartedRef.current) return
+
+    // IMPORTANT: If we're collecting details, don't allow any other messages
+    if (collectingDetails) return
+
+    // Check if user details are already complete
+    // Treat 'Seeker' as incomplete since it's the default placeholder name
+    // Only require name and DOB now (gender, place, time are optional)
+    const hasCompleteDetails = userProfile &&
+      userProfile.name &&
+      userProfile.name !== 'Seeker' && // Don't accept default 'Seeker' name
+      userProfile.dateOfBirth
+
+    // Check if user details message already exists
+    const hasUserDetailsMessage = messages.some(msg => msg.id && msg.id.startsWith('user-details-'))
+
+    if (hasCompleteDetails) {
+      if (hasUserDetailsMessage) {
+        // Details already collected and message exists, start timer if not already started
+        if (!freeChatStartTime) {
+          console.log('✅ User details complete, starting timer...')
+          // Timer will be started after details are added to chat
+          // This prevents welcome messages from appearing before questionnaire completes
+          setTimeout(() => startChatTimer(), 100)
+        }
+      } else {
+        // Details complete but message doesn't exist, add message and start timer
+        console.log('✅ User details already complete, adding message and starting timer...')
+        detailsCollectionStartedRef.current = true
+
+        // Format and add user details message
+        const birthDate = new Date(userProfile.dateOfBirth!)
+        const day = birthDate.getDate().toString().padStart(2, '0')
+        const month = birthDate.toLocaleDateString('en-US', { month: 'long' })
+        const year = birthDate.getFullYear()
+        const formattedDOB = `${day}-${month}-${year}`
+
+        const userDetailsMessage = `Hi, Below are my details:
+Name: ${userProfile.name}
+Gender: ${userProfile.gender ? userProfile.gender.charAt(0).toUpperCase() + userProfile.gender.slice(1) : 'Not specified'}
+Date of Birth: ${formattedDOB}
+Time of Birth: ${userProfile.birthTime || 'Not specified'}
+Place of Birth: ${userProfile.placeOfBirth || 'Not specified'}`
+
+        addMessage({
+          id: `user-details-${Date.now()}`,
+          role: 'user',
+          content: userDetailsMessage,
+          timestamp: Date.now(),
+        })
+
+        // Start timer and show welcome messages AFTER details message is added
+        // Use setTimeout to ensure message is rendered first
+        setTimeout(() => startChatTimer(), 100)
+      }
+      return
+    }
+
+    // Start collecting details
+    if (!hasCompleteDetails && !collectingDetails) {
+      console.log('📝 Starting user details collection...')
+      setCollectingDetails(true)
+      detailsCollectionStartedRef.current = true
+      startDetailsCollection()
+    }
+  }, [freeChatActive, freeChatStartTime, isPaidUser, userProfile, messages, collectingDetails])
+
+  // Start details collection flow
+  const startDetailsCollection = () => {
+    // Check what we already have
+    const existingName = userProfile?.name
+    const existingDOB = userProfile?.dateOfBirth
+
+    // Initialize collected details with existing data
+    setCollectedDetails({
+      name: existingName,
+      dateOfBirth: existingDOB,
+    })
+
+    // Ask for name first if missing - show immediately, no delay
+    if (!existingName) {
+      setCurrentDetailStep('name')
+      // Show question immediately - no delay for questionnaire
+      addMessage({
+        id: `ask-name-${Date.now()}`,
+        role: 'assistant',
+        content: 'Please share your name.',
+        timestamp: Date.now(),
+      })
+    } else if (!existingDOB) {
+      setCurrentDetailStep('dob')
+      // Show question immediately - no delay for questionnaire
+      addMessage({
+        id: `ask-dob-${Date.now()}`,
+        role: 'assistant',
+        content: 'Please share your date of birth (DD-MM-YYYY format).',
+        timestamp: Date.now(),
+      })
+    } else {
+      // All required details collected, complete the flow
+      completeDetailsCollection()
+    }
+  }
+
+  // Ask for optional details - REMOVED: No longer asking for gender, place, or time
+  // Keeping this function for compatibility but it just completes the flow
+  const askOptionalDetails = () => {
+    completeDetailsCollection()
+  }
+
+  // Complete details collection and start timer
+  const completeDetailsCollection = () => {
+    console.log('✅ All details collected, completing flow...')
+    setCollectingDetails(false)
+    setCurrentDetailStep(null)
+
+    // Update user profile with collected details
+    const updatedProfile = {
+      ...userProfile!,
+      name: collectedDetails.name || userProfile?.name || 'Seeker',
+      dateOfBirth: collectedDetails.dateOfBirth || userProfile?.dateOfBirth || new Date().toISOString().split('T')[0],
+      languages: userProfile?.languages || ['english'],
+      // Gender, place, and time are now optional - don't require them
+      gender: collectedDetails.gender || userProfile?.gender,
+      placeOfBirth: collectedDetails.placeOfBirth || userProfile?.placeOfBirth,
+      birthTime: collectedDetails.timeOfBirth || userProfile?.birthTime,
+    }
+    setUserProfile(updatedProfile)
+
+    // Save profile to database
+    fetch('/api/users/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(updatedProfile),
+    }).catch(error => {
+      console.error('Error saving profile to database:', error)
+    })
+
+    // Format and add user details message - only show name and DOB
+    const birthDate = new Date(updatedProfile.dateOfBirth!)
+    const day = birthDate.getDate().toString().padStart(2, '0')
+    const month = birthDate.toLocaleDateString('en-US', { month: 'long' })
+    const year = birthDate.getFullYear()
+    const formattedDOB = `${day}-${month}-${year}`
+
+    const userDetailsMessage = `Hi, Below are my details:
+Name: ${updatedProfile.name}
+Date of Birth: ${formattedDOB}`
+
+    addMessage({
+      id: `user-details-${Date.now()}`,
+      role: 'user',
+      content: userDetailsMessage,
+      timestamp: Date.now(),
+    })
+
+    // Start timer and show welcome messages after a brief delay
+    // Pass the updated profile directly to avoid state timing issues
+    setTimeout(() => {
+      startChatTimer(true, updatedProfile) // Bypass checks and use the profile we just created
+    }, 200)
+  }
+
+  // Start chat timer and show welcome messages (only after questionnaire is complete)
+  const startChatTimer = (bypassSafetyCheck = false, profileData = userProfile) => {
+    // Safety check: Don't start timer if we're still collecting details
+    // Skip this check if called from completeDetailsCollection (states are already being set to false)
+    if (!bypassSafetyCheck && (collectingDetails || currentDetailStep)) {
+      console.log('⚠️ Still collecting details, cannot start timer yet')
+      return
+    }
+
+    // Additional safety check: Ensure user profile has required details
+    // Use profileData parameter instead of userProfile state to avoid timing issues
+    // Only require name and DOB now (gender, place, time are optional)
+    if (!profileData?.name || !profileData?.dateOfBirth) {
+      console.log('⚠️ User profile incomplete, cannot start timer yet')
+      return
+    }
+
+    console.log('⏱️ Starting chat timer...')
+    setFreeChatStartTime(Date.now())
+
+    // Show welcome messages only after details are collected
+    setTimeout(() => {
+      addMessage({
+        id: `welcome-${Date.now()}`,
+        role: 'assistant',
+        content: 'Welcome to Astronova!',
+        timestamp: Date.now(),
+      })
+    }, 500)
+
+    setTimeout(() => {
+      addMessage({
+        id: `joining-${Date.now()}`,
+        role: 'assistant',
+        content: 'Astrologer will join within 10 seconds',
+        timestamp: Date.now(),
+      })
+    }, 1000)
+
+    setTimeout(() => {
+      addMessage({
+        id: `share-question-${Date.now()}`,
+        role: 'assistant',
+        content: 'Please share your question in the meanwhile.',
+        timestamp: Date.now(),
+      })
+    }, 1500)
+
+    // Show astrologer joined notification right after welcome messages
+    setTimeout(() => {
+      addMessage({
+        id: `astrologer-joined-${Date.now()}`,
+        role: 'system',
+        content: '✨ Astrologer Raghav has joined the chat',
+        timestamp: Date.now(),
+      })
+    }, 2500) // 2.5 seconds - right after "Please share your question"
+
+    // Add follow-up prompts to encourage user engagement (only for free chat flow)
+    // Store timeouts so they can be cleared when user replies
+    if (freeChatActive) {
+      const timeout1 = setTimeout(() => {
+        addMessage({
+          id: `followup-1-${Date.now()}`,
+          role: 'assistant',
+          content: 'main aapki kya sahayata kar sakta hun',
+          timestamp: Date.now(),
+        })
+      }, 5000) // 5 seconds after welcome messages
+
+      const timeout2 = setTimeout(() => {
+        addMessage({
+          id: `followup-2-${Date.now()}`,
+          role: 'assistant',
+          content: 'reply dijiye',
+          timestamp: Date.now(),
+        })
+      }, 11000) // 11 seconds total
+
+      const timeout3 = setTimeout(() => {
+        addMessage({
+          id: `followup-3-${Date.now()}`,
+          role: 'assistant',
+          content: 'main aapki pratiksha kar raha hun',
+          timestamp: Date.now(),
+        })
+      }, 14000) // 14 seconds total
+
+      // Store timeouts so they can be cleared when user types/replies
+      followUpTimeoutsRef.current = [timeout1, timeout2, timeout3]
+    }
+  }
+
   // Check balance when entering chat interface
   useEffect(() => {
     // Only check if not in active free chat and not a paid user
@@ -271,8 +553,9 @@ export default function ChatInterface() {
   }, [freeChatActive, isPaidUser, walletBalance, messages.length])
 
   // Initial greeting - only if no messages exist and not in free chat mode
+  // IMPORTANT: Skip greeting if we're collecting details (questionnaire should come first)
   useEffect(() => {
-    console.log('Greeting check:', { hasGreeted: hasGreetedRef.current, userProfile: !!userProfile, messagesLength: messages.length, freeChatActive })
+    console.log('Greeting check:', { hasGreeted: hasGreetedRef.current, userProfile: !!userProfile, messagesLength: messages.length, freeChatActive, collectingDetails })
 
     if (hasGreetedRef.current) {
       console.log('Already greeted, skipping')
@@ -287,9 +570,15 @@ export default function ChatInterface() {
       hasGreetedRef.current = true
       return
     }
-    // Don't show regular greeting if free chat was used (messages will be added by free chat flow)
+    // Don't show regular greeting if free chat was used (questionnaire will be shown instead)
     if (freeChatActive) {
-      console.log('Free chat active, skipping regular greeting')
+      console.log('Free chat active, skipping regular greeting - questionnaire will be shown')
+      hasGreetedRef.current = true
+      return
+    }
+    // Don't show greeting if we're collecting details
+    if (collectingDetails) {
+      console.log('Collecting details, skipping greeting')
       hasGreetedRef.current = true
       return
     }
@@ -331,20 +620,156 @@ export default function ChatInterface() {
       clearTimeout(timeoutId)
       setIsTyping(false)
     }
-  }, [userProfile, messages.length, addMessage, freeChatActive])
+  }, [userProfile, messages.length, addMessage, freeChatActive, collectingDetails])
+
+  // Handle user input during details collection
+  const handleDetailsInput = (userInput: string) => {
+    const lowerInput = userInput.toLowerCase().trim()
+    const skipKeywords = ['skip', 'not specified', 'na', 'n/a', 'none']
+
+    if (!currentDetailStep) return
+
+    // Add user message
+    addMessage({
+      id: Date.now().toString(),
+      role: 'user' as const,
+      content: userInput,
+      timestamp: Date.now(),
+    })
+
+    // Process the input based on current step
+    switch (currentDetailStep) {
+      case 'name':
+        if (userInput.trim().length > 0) {
+          const updatedDetails = { ...collectedDetails, name: userInput.trim() }
+          setCollectedDetails(updatedDetails)
+          // Move to DOB - show immediately
+          if (!updatedDetails.dateOfBirth && !userProfile?.dateOfBirth) {
+            setCurrentDetailStep('dob')
+            addMessage({
+              id: `ask-dob-${Date.now()}`,
+              role: 'assistant',
+              content: 'Please share your date of birth (DD-MM-YYYY format).',
+              timestamp: Date.now(),
+            })
+          } else {
+            // Name and DOB collected, complete the flow
+            completeDetailsCollection()
+          }
+        }
+        break
+
+      case 'dob':
+        // Try to parse date in various formats
+        let parsedDate: Date | null = null
+        const dateFormats = [
+          /^(\d{1,2})-(\d{1,2})-(\d{4})$/, // DD-MM-YYYY
+          /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // DD/MM/YYYY
+          /^(\d{4})-(\d{1,2})-(\d{1,2})$/, // YYYY-MM-DD
+        ]
+
+        for (const format of dateFormats) {
+          const match = userInput.match(format)
+          if (match) {
+            if (format === dateFormats[0] || format === dateFormats[1]) {
+              // DD-MM-YYYY or DD/MM/YYYY
+              const day = parseInt(match[1])
+              const month = parseInt(match[2]) - 1
+              const year = parseInt(match[3])
+              parsedDate = new Date(year, month, day)
+            } else {
+              // YYYY-MM-DD
+              parsedDate = new Date(userInput)
+            }
+            if (!isNaN(parsedDate.getTime())) break
+          }
+        }
+
+        if (parsedDate && !isNaN(parsedDate.getTime())) {
+          const isoDate = parsedDate.toISOString().split('T')[0]
+          const updatedDetails = { ...collectedDetails, dateOfBirth: isoDate }
+          setCollectedDetails(updatedDetails)
+          // Name and DOB collected - complete the flow
+          completeDetailsCollection()
+        } else {
+          // Invalid date format - show immediately
+          addMessage({
+            id: `invalid-dob-${Date.now()}`,
+            role: 'assistant',
+            content: 'Please provide a valid date in DD-MM-YYYY format (e.g., 15-01-1990).',
+            timestamp: Date.now(),
+          })
+        }
+        break
+
+      case 'gender':
+        const genderMap: Record<string, string> = {
+          'male': 'male',
+          'm': 'male',
+          'man': 'male',
+          'female': 'female',
+          'f': 'female',
+          'woman': 'female',
+          'other': 'other',
+          'o': 'other',
+        }
+        const normalizedGender = genderMap[lowerInput]
+        if (normalizedGender) {
+          setCollectedDetails(prev => ({ ...prev, gender: normalizedGender }))
+          askOptionalDetails()
+        } else {
+          // Invalid gender - show immediately
+          addMessage({
+            id: `invalid-gender-${Date.now()}`,
+            role: 'assistant',
+            content: 'Please provide a valid gender: Male, Female, or Other.',
+            timestamp: Date.now(),
+          })
+        }
+        break
+
+      case 'placeOfBirth':
+        if (skipKeywords.includes(lowerInput)) {
+          setCollectedDetails(prev => ({ ...prev, placeOfBirth: undefined }))
+        } else {
+          setCollectedDetails(prev => ({ ...prev, placeOfBirth: userInput.trim() }))
+        }
+        // Move to time of birth - show immediately
+        setCurrentDetailStep('timeOfBirth')
+        addMessage({
+          id: `ask-time-${Date.now()}`,
+          role: 'assistant',
+          content: 'Please share your time of birth (optional - you can skip by typing "skip").',
+          timestamp: Date.now(),
+        })
+        break
+
+      case 'timeOfBirth':
+        if (skipKeywords.includes(lowerInput)) {
+          setCollectedDetails(prev => ({ ...prev, timeOfBirth: undefined }))
+        } else {
+          setCollectedDetails(prev => ({ ...prev, timeOfBirth: userInput.trim() }))
+        }
+        // Complete collection
+        completeDetailsCollection()
+        break
+    }
+  }
 
   // Handle input changes with typing detection
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value
     setInput(value)
 
-    // Only manage follow-ups if free chat is active, follow-ups have started, and user hasn't replied yet
-    if (freeChatActive && hasStartedFollowUpsRef.current && !userHasRepliedRef.current) {
+    // Clear follow-up timeouts immediately when user starts typing
+    if (freeChatActive && followUpTimeoutsRef.current.length > 0) {
       console.log('⌨️ User is typing, clearing follow-up timeouts...')
-
-      // Clear follow-up timeouts when user starts typing
       clearFollowUpTimeouts()
+      userHasRepliedRef.current = true // Prevent follow-ups from restarting
+    }
 
+    // Only manage inactivity timeout for the old follow-up system (if it was started)
+    if (freeChatActive && hasStartedFollowUpsRef.current && !userHasRepliedRef.current) {
       // Set inactivity timeout to restart follow-ups if user stops typing for 8 seconds
       if (inactivityTimeoutRef.current) {
         clearTimeout(inactivityTimeoutRef.current)
@@ -363,6 +788,15 @@ export default function ChatInterface() {
   const sendMessage = async () => {
     if (!input.trim() || isTyping || isChatBlocked) return
 
+    const userInput = input.trim()
+    setInput('')
+
+    // Handle details collection if active
+    if (collectingDetails && currentDetailStep) {
+      handleDetailsInput(userInput)
+      return
+    }
+
     // Clear follow-ups when user sends a message and mark that user has replied
     if (freeChatActive) {
       console.log('📤 Message sent, clearing all follow-ups permanently...')
@@ -373,7 +807,7 @@ export default function ChatInterface() {
     const userMessage = {
       id: Date.now().toString(),
       role: 'user' as const,
-      content: input.trim(),
+      content: userInput,
       timestamp: Date.now(),
     }
 
@@ -386,7 +820,7 @@ export default function ChatInterface() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           messages: [userMessage],
           userId: currentUserProfile?.id // Send userId if available
         }),
@@ -409,7 +843,7 @@ export default function ChatInterface() {
       try {
         // Get current messages from store to ensure we have the latest state
         const currentMessages = useStore.getState().messages
-        
+
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -490,7 +924,7 @@ export default function ChatInterface() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify({ 
+                    body: JSON.stringify({
                       messages: assistantMessages,
                       userId: currentUserProfile?.id // Send userId if available
                     }),
@@ -516,7 +950,7 @@ export default function ChatInterface() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                   messages: assistantMessages,
                   userId: currentUserProfile?.id // Send userId if available
                 }),
@@ -701,7 +1135,7 @@ export default function ChatInterface() {
             value={input}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            placeholder={isChatBlocked ? "Recharge to continue chatting..." : "Ask Astrologer anything..."}
+            placeholder={isChatBlocked ? "Recharge to continue chatting..." : collectingDetails && currentDetailStep ? `Please provide your ${currentDetailStep === 'dob' ? 'date of birth' : currentDetailStep === 'placeOfBirth' ? 'place of birth' : currentDetailStep === 'timeOfBirth' ? 'time of birth' : currentDetailStep}...` : "Ask Astrologer anything..."}
             rows={1}
             disabled={isChatBlocked}
             className="flex-1 px-6 py-4 bg-slate-700/50 border border-slate-600/50 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all resize-none disabled:opacity-50 disabled:cursor-not-allowed"
