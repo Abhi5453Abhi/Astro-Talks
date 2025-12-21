@@ -27,41 +27,39 @@ export default function StartScreen() {
   // }, [status, setCurrentScreen])
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden flex flex-col items-center p-6 pt-28 pb-28">
-      {/* Star background effect */}
-      <div className="absolute inset-0 overflow-hidden">
-        {Array.from({ length: 50 }).map((_, i) => (
+    <div className="min-h-screen min-h-[100dvh] bg-gradient-to-b from-slate-900 via-indigo-900 to-slate-900 relative overflow-hidden flex flex-col items-center justify-center p-6">
+      {/* Star background effect - subtle white dots */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {Array.from({ length: 80 }).map((_, i) => (
           <div
             key={i}
             className="absolute rounded-full bg-white"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
-              width: `${Math.random() * 3 + 1}px`,
-              height: `${Math.random() * 3 + 1}px`,
-              opacity: Math.random() * 0.8 + 0.2,
-              animation: `twinkle ${Math.random() * 3 + 2}s infinite`,
+              width: `${Math.random() * 2 + 0.5}px`,
+              height: `${Math.random() * 2 + 0.5}px`,
+              opacity: Math.random() * 0.4 + 0.1,
+              animation: `twinkle ${Math.random() * 4 + 3}s infinite`,
             }}
           />
         ))}
       </div>
 
       <div className="relative z-10 flex-1 w-full flex flex-col items-center justify-center text-center gap-8">
-        {/* Planet Icon */}
+        {/* Logo - Golden Circle with Concentric Rings */}
         <motion.div
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ duration: 1, type: 'spring', stiffness: 100 }}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.8, type: 'spring', stiffness: 100 }}
+          className="relative w-32 h-32 sm:w-40 sm:h-40 mx-auto"
         >
-          <div className="relative">
-            {/* Planet (Saturn-like) */}
-            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 shadow-2xl shadow-yellow-500/50 flex items-center justify-center mx-auto">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500"></div>
-            </div>
-            {/* Ring */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 sm:w-40 sm:h-40 border-4 border-yellow-400 rounded-full opacity-80"></div>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 sm:w-36 sm:h-36 border-2 border-yellow-500 rounded-full opacity-60"></div>
-          </div>
+          {/* Outer ring */}
+          <div className="absolute inset-0 rounded-full border-4 border-yellow-400"></div>
+          {/* Middle ring */}
+          <div className="absolute inset-2 rounded-full border-2 border-yellow-500"></div>
+          {/* Inner solid circle */}
+          <div className="absolute inset-4 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500"></div>
         </motion.div>
 
         {/* App Name */}
@@ -69,7 +67,7 @@ export default function StartScreen() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6 }}
-          className="text-5xl sm:text-6xl md:text-7xl font-bold text-white"
+          className="text-5xl sm:text-6xl md:text-7xl font-bold text-white tracking-tight"
         >
           Astronova
         </motion.h1>
@@ -79,23 +77,23 @@ export default function StartScreen() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.6 }}
-          className="text-white/90 text-lg sm:text-xl"
+          className="text-white text-lg sm:text-xl font-normal"
         >
           Your destiny, simplified.
         </motion.p>
 
         <AnimatePresence mode="wait">
-          {/* Authentication feature commented out - always show start button */}
+          {/* Start Now Button */}
           <motion.button
             key="start-button"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.4 }}
+            transition={{ delay: 0.7, duration: 0.4 }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleStartNow}
-            className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-slate-900 font-bold text-lg sm:text-xl px-12 sm:px-16 py-4 sm:py-5 rounded-full shadow-2xl shadow-yellow-500/50 hover:shadow-yellow-500/70 transition-all"
+            className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 font-bold text-lg sm:text-xl px-16 sm:px-20 py-4 sm:py-5 rounded-full shadow-lg hover:shadow-xl transition-all mt-4"
           >
             Start Now
           </motion.button>
@@ -126,15 +124,15 @@ export default function StartScreen() {
               Sign-in is currently disabled
             </motion.div>
           )} */}
-          {/* Footer Text */}
+          {/* Footer Text - Trust Indicators */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.9, duration: 0.6 }}
-            className="relative z-10 mt-4 text-center space-y-2"
+            transition={{ delay: 1.0, duration: 0.6 }}
+            className="relative z-10 mt-12 sm:mt-16 text-center space-y-2"
           >
-            <p className="text-white text-sm sm:text-base">Trusted by 2 lakh+ families</p>
-            <p className="text-white/80 text-sm sm:text-base">24/7 Pandit Consultation</p>
+            <p className="text-white text-sm sm:text-base">Trusted by 2 lakh+ families.</p>
+            <p className="text-white text-sm sm:text-base">24/7 Pandit Consultation</p>
           </motion.div>
         </AnimatePresence>
       </div>

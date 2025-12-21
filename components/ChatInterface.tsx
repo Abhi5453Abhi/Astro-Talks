@@ -314,12 +314,45 @@ export default function ChatInterface() {
           setTimeout(() => startChatTimer(), 100)
         }
       } else {
-        // Details complete but message doesn't exist, start timer
-        console.log('✅ User details already complete, starting timer...')
+        // Details complete but message doesn't exist, add message and start timer
+        console.log('✅ User details already complete, adding message and starting timer...')
         detailsCollectionStartedRef.current = true
 
-        // Don't show user details message - it's redundant since we already asked for details
-        // Start timer and show welcome messages immediately
+        // Format and add user details message - only show name and DOB (consistent with new flow)
+        let formattedDOB = 'Not specified'
+        if (userProfile.dateOfBirth) {
+          const dobString = userProfile.dateOfBirth
+          // Check if it's already in DD-MM-YYYY format (from picker)
+          if (dobString.includes('-') && dobString.split('-')[0].length <= 2) {
+            // Already in DD-MM-YYYY format
+            const [day, month, year] = dobString.split('-')
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+              'July', 'August', 'September', 'October', 'November', 'December']
+            const monthName = monthNames[parseInt(month) - 1]
+            formattedDOB = `${day}-${monthName}-${year}`
+          } else {
+            // In YYYY-MM-DD format (from database)
+            const birthDate = new Date(dobString)
+            const day = birthDate.getDate().toString().padStart(2, '0')
+            const month = birthDate.toLocaleDateString('en-US', { month: 'long' })
+            const year = birthDate.getFullYear()
+            formattedDOB = `${day}-${month}-${year}`
+          }
+        }
+
+        const userDetailsMessage = `Hi, Below are my details:
+Name: ${userProfile.name}
+Date of Birth: ${formattedDOB}`
+
+        addMessage({
+          id: `user-details-${Date.now()}`,
+          role: 'user',
+          content: userDetailsMessage,
+          timestamp: Date.now(),
+        })
+
+        // Start timer and show welcome messages AFTER details message is added
+        // Use setTimeout to ensure message is rendered first
         setTimeout(() => startChatTimer(), 100)
       }
       return
@@ -367,31 +400,26 @@ export default function ChatInterface() {
       })
     } else {
       // All required details collected, complete the flow
-      // Use collectedDetails state since it should be up to date at this point
-      completeDetailsCollection(collectedDetails)
+      completeDetailsCollection()
     }
   }
 
   // Ask for optional details - REMOVED: No longer asking for gender, place, or time
   // Keeping this function for compatibility but it just completes the flow
   const askOptionalDetails = () => {
-    completeDetailsCollection(collectedDetails)
+    completeDetailsCollection()
   }
 
   // Complete details collection and start timer
-  const completeDetailsCollection = (finalCollectedDetails?: typeof collectedDetails) => {
+  const completeDetailsCollection = () => {
     console.log('✅ All details collected, completing flow...')
     setCollectingDetails(false)
     setCurrentDetailStep(null)
 
-    // Use the passed details or fall back to state (for cases where state has already updated)
-    const detailsToUse = finalCollectedDetails || collectedDetails
-    console.log('📝 Using collected details:', detailsToUse)
-
     // Update user profile with collected details
     // Convert DOB from DD-MM-YYYY to YYYY-MM-DD for database storage
-    let dbDateOfBirth = detailsToUse.dateOfBirth || userProfile?.dateOfBirth
-    console.log('📅 Original DOB:', dbDateOfBirth, 'from details:', detailsToUse.dateOfBirth, 'from profile:', userProfile?.dateOfBirth)
+    let dbDateOfBirth = collectedDetails.dateOfBirth || userProfile?.dateOfBirth
+    console.log('📅 Original DOB:', dbDateOfBirth)
     if (dbDateOfBirth && dbDateOfBirth.includes('-') && dbDateOfBirth.split('-')[0].length <= 2) {
       // Convert DD-MM-YYYY to YYYY-MM-DD
       const [day, month, year] = dbDateOfBirth.split('-')
@@ -401,86 +429,66 @@ export default function ChatInterface() {
 
     const updatedProfile = {
       ...userProfile!,
-      name: detailsToUse.name || userProfile?.name || 'Seeker',
+      name: collectedDetails.name || userProfile?.name || 'Seeker',
       dateOfBirth: dbDateOfBirth, // Now in YYYY-MM-DD format for database
       languages: userProfile?.languages || ['english'],
       // Gender, place, and time are now optional - don't require them
-      gender: detailsToUse.gender || userProfile?.gender,
-      placeOfBirth: detailsToUse.placeOfBirth || userProfile?.placeOfBirth,
-      birthTime: detailsToUse.timeOfBirth || userProfile?.birthTime,
+      gender: collectedDetails.gender || userProfile?.gender,
+      placeOfBirth: collectedDetails.placeOfBirth || userProfile?.placeOfBirth,
+      birthTime: collectedDetails.timeOfBirth || userProfile?.birthTime,
     }
     setUserProfile(updatedProfile)
-    console.log('💾 Profile updated in state, will save to database in background')
+    console.log('💾 Saving profile to database:', updatedProfile)
 
-    // Format and add user details message IMMEDIATELY (don't wait for DB save)
-    // Format DOB for display (convert from YYYY-MM-DD to DD-MonthName-YYYY)
-    let formattedDOB = 'Not specified'
-    console.log('🎨 Formatting DOB for display. dbDateOfBirth:', dbDateOfBirth, 'type:', typeof dbDateOfBirth)
-    if (dbDateOfBirth) {
-      try {
-        // Parse the YYYY-MM-DD format
-        // Use explicit parsing to avoid timezone issues
-        const [year, month, day] = dbDateOfBirth.split('-').map(Number)
-        console.log('📆 Parsed date parts:', { year, month, day })
-        
-        if (year && month && day && !isNaN(year) && !isNaN(month) && !isNaN(day)) {
-          // Create date object using UTC to avoid timezone issues
-          const birthDate = new Date(Date.UTC(year, month - 1, day))
-          console.log('📅 Created date object:', birthDate)
-          
-          if (!isNaN(birthDate.getTime())) {
-            const dayStr = day.toString().padStart(2, '0')
-            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-              'July', 'August', 'September', 'October', 'November', 'December']
-            const monthName = monthNames[month - 1]
-            formattedDOB = `${dayStr}-${monthName}-${year}`
-            console.log('✅ Formatted DOB:', formattedDOB)
-          } else {
-            console.error('❌ Invalid date after parsing:', dbDateOfBirth, 'parts:', { year, month, day })
-          }
-        } else {
-          console.error('❌ Invalid date format or NaN values:', dbDateOfBirth)
-        }
-      } catch (error) {
-        console.error('❌ Error formatting date:', error, dbDateOfBirth)
-      }
-    } else {
-      console.error('❌ dbDateOfBirth is empty or undefined')
-    }
-
-    // Don't show user details message - it's redundant since we already asked for details
-    // Start timer and show welcome messages IMMEDIATELY (don't wait for DB save)
-    // Pass the updated profile directly to avoid state timing issues
-    startChatTimer(true, updatedProfile) // Bypass checks and use the profile we just created
-
-    // Save profile to database in the background (non-blocking)
-    // This happens asynchronously and won't delay the UI
+    // Save profile to database
     fetch('/api/users/save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify(updatedProfile),
+    }).catch(error => {
+      console.error('Error saving profile to database:', error)
     })
-      .then(async (saveResponse) => {
-        if (!saveResponse.ok) {
-          const errorData = await saveResponse.json().catch(() => ({}))
-          console.error('Error saving profile to database:', saveResponse.status, errorData)
-        } else {
-          const savedData = await saveResponse.json()
-          console.log('✅ Profile saved successfully to database:', savedData)
-          // Update profile with saved data to ensure we have the latest from DB
-          if (savedData.user) {
-            setUserProfile({
-              ...updatedProfile,
-              id: savedData.user.id,
-              dateOfBirth: savedData.user.date_of_birth || dbDateOfBirth,
-            })
-          }
-        }
-      })
-      .catch(error => {
-        console.error('Error saving profile to database:', error)
-      })
+
+    // Format and add user details message - only show name and DOB
+    // DOB is already in DD-MM-YYYY format, so we need to parse it differently
+    let formattedDOB = 'Not specified'
+    if (updatedProfile.dateOfBirth) {
+      const dobString = updatedProfile.dateOfBirth
+      // Check if it's already in DD-MM-YYYY format (from picker)
+      if (dobString.includes('-') && dobString.split('-')[0].length <= 2) {
+        // Already in DD-MM-YYYY format
+        const [day, month, year] = dobString.split('-')
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December']
+        const monthName = monthNames[parseInt(month) - 1]
+        formattedDOB = `${day}-${monthName}-${year}`
+      } else {
+        // In YYYY-MM-DD format (from database)
+        const birthDate = new Date(dobString)
+        const day = birthDate.getDate().toString().padStart(2, '0')
+        const month = birthDate.toLocaleDateString('en-US', { month: 'long' })
+        const year = birthDate.getFullYear()
+        formattedDOB = `${day}-${month}-${year}`
+      }
+    }
+
+    const userDetailsMessage = `Hi, Below are my details:
+Name: ${updatedProfile.name}
+Date of Birth: ${formattedDOB}`
+
+    addMessage({
+      id: `user-details-${Date.now()}`,
+      role: 'user',
+      content: userDetailsMessage,
+      timestamp: Date.now(),
+    })
+
+    // Start timer and show welcome messages after a brief delay
+    // Pass the updated profile directly to avoid state timing issues
+    setTimeout(() => {
+      startChatTimer(true, updatedProfile) // Bypass checks and use the profile we just created
+    }, 200)
   }
 
   // Start chat timer and show welcome messages (only after questionnaire is complete)
@@ -689,8 +697,7 @@ export default function ChatInterface() {
             })
           } else {
             // Name and DOB collected, complete the flow
-            // Pass updatedDetails directly to avoid React state timing issues
-            completeDetailsCollection(updatedDetails)
+            completeDetailsCollection()
           }
         }
         break
@@ -709,10 +716,9 @@ export default function ChatInterface() {
           if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900 && year <= new Date().getFullYear()) {
             const updatedDetails = { ...collectedDetails, dateOfBirth: userInput }
             setCollectedDetails(updatedDetails)
-            console.log('✅ DOB saved:', userInput, 'Updated details:', updatedDetails)
+            console.log('✅ DOB saved:', userInput)
             // Name and DOB collected - complete the flow
-            // Pass updatedDetails directly to avoid React state timing issues
-            completeDetailsCollection(updatedDetails)
+            completeDetailsCollection()
           } else {
             addMessage({
               id: `invalid-dob-${Date.now()}`,
@@ -775,16 +781,13 @@ export default function ChatInterface() {
         break
 
       case 'timeOfBirth':
-        let timeUpdatedDetails
         if (skipKeywords.includes(lowerInput)) {
-          timeUpdatedDetails = { ...collectedDetails, timeOfBirth: undefined }
-          setCollectedDetails(timeUpdatedDetails)
+          setCollectedDetails(prev => ({ ...prev, timeOfBirth: undefined }))
         } else {
-          timeUpdatedDetails = { ...collectedDetails, timeOfBirth: userInput.trim() }
-          setCollectedDetails(timeUpdatedDetails)
+          setCollectedDetails(prev => ({ ...prev, timeOfBirth: userInput.trim() }))
         }
-        // Complete collection - pass updated details to avoid state timing issues
-        completeDetailsCollection(timeUpdatedDetails)
+        // Complete collection
+        completeDetailsCollection()
         break
     }
   }
@@ -1011,7 +1014,7 @@ export default function ChatInterface() {
     }, typingDelay)
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       sendMessage()
@@ -1177,7 +1180,7 @@ export default function ChatInterface() {
                   <label className="block text-slate-400 text-xs mb-1 text-center">Day</label>
                   <select
                     value={selectedDay}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 text-center font-medium cursor-pointer hover:bg-slate-650 transition-colors"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 text-center font-medium cursor-pointer hover:bg-slate-600 transition-colors"
                     onChange={(e) => setSelectedDay(e.target.value)}
                   >
                     <option value="">DD</option>
@@ -1192,7 +1195,7 @@ export default function ChatInterface() {
                   <label className="block text-slate-400 text-xs mb-1 text-center">Month</label>
                   <select
                     value={selectedMonth}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 text-center font-medium cursor-pointer hover:bg-slate-650 transition-colors"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 text-center font-medium cursor-pointer hover:bg-slate-600 transition-colors"
                     onChange={(e) => setSelectedMonth(e.target.value)}
                   >
                     <option value="">MM</option>
@@ -1207,7 +1210,7 @@ export default function ChatInterface() {
                   <label className="block text-slate-400 text-xs mb-1 text-center">Year</label>
                   <select
                     value={selectedYear}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 text-center font-medium cursor-pointer hover:bg-slate-650 transition-colors"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 text-center font-medium cursor-pointer hover:bg-slate-600 transition-colors"
                     onChange={(e) => setSelectedYear(e.target.value)}
                   >
                     <option value="">YYYY</option>
@@ -1222,6 +1225,34 @@ export default function ChatInterface() {
               <button
                 onClick={() => {
                   if (selectedDay && selectedMonth && selectedYear) {
+                    const day = parseInt(selectedDay)
+                    const month = parseInt(selectedMonth)
+                    const year = parseInt(selectedYear)
+                    
+                    // Validate date (check for valid day in month, leap years, etc.)
+                    const daysInMonth = new Date(year, month, 0).getDate()
+                    if (day > daysInMonth) {
+                      addMessage({
+                        id: `invalid-date-${Date.now()}`,
+                        role: 'assistant',
+                        content: `Invalid date. ${month === 2 ? 'February' : 'Month ' + month} ${year} only has ${daysInMonth} days.`,
+                        timestamp: Date.now(),
+                      })
+                      return
+                    }
+                    
+                    // Validate year range
+                    const currentYear = new Date().getFullYear()
+                    if (year < 1900 || year > currentYear) {
+                      addMessage({
+                        id: `invalid-year-${Date.now()}`,
+                        role: 'assistant',
+                        content: `Please select a year between 1900 and ${currentYear}.`,
+                        timestamp: Date.now(),
+                      })
+                      return
+                    }
+                    
                     const formattedDate = `${selectedDay.padStart(2, '0')}-${selectedMonth.padStart(2, '0')}-${selectedYear}`
                     handleDetailsInput(formattedDate)
                     // Reset selections
