@@ -95,15 +95,8 @@ export const useStore = create<Store>()(
       setUserProfile: (profile) => set((state) => {
         // Only update the profile, don't change screen automatically
         // Screen changes should be handled explicitly by the components
-        const newState: any = { userProfile: profile }
-        
-        // Only auto-change screen if we're on start screen and setting profile for first time
-        // This handles the initial onboarding flow
-        if (state.currentScreen === 'start' && !state.userProfile && profile) {
-          newState.currentScreen = state.freeChatClaimed ? 'home' : 'free-chat-option'
-        }
-        
-        return newState
+        // Don't auto-navigate from start screen - let user click "Start Now" button
+        return { userProfile: profile }
       }),
       addMessage: (message) =>
         set((state) => ({ messages: [...state.messages, message] })),

@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 // Authentication feature commented out
 // import { useSession } from 'next-auth/react'
+import { track } from '@vercel/analytics'
 import Onboarding from '@/components/Onboarding'
 import ChatInterface from '@/components/ChatInterface'
 import FreeChatOption from '@/components/FreeChatOption'
@@ -19,10 +21,79 @@ export default function Home() {
   // Authentication feature commented out
   // const { status } = useSession()
   const [mounted, setMounted] = useState(false)
+  const previousScreenRef = useRef<typeof currentScreen | null>(null)
+  const hasInitializedRef = useRef(false)
+  const router = useRouter()
 
   useEffect(() => {
     setMounted(true)
+    // Initialize previous screen ref to avoid tracking initial mount as a pageview
+    previousScreenRef.current = currentScreen
   }, [])
+
+  // Force start screen on first load (unless URL specifies otherwise)
+  useEffect(() => {
+    if (!mounted || hasInitializedRef.current) return
+    
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const screenParam = urlParams.get('screen')
+      
+      // If no screen parameter in URL, force start screen
+      // This overrides any persisted state to ensure fresh visitors see the start screen
+      if (!screenParam) {
+        console.log('🔄 First load: Setting screen to start')
+        setCurrentScreen('start')
+        hasInitializedRef.current = true
+      } else {
+        hasInitializedRef.current = true
+      }
+    }
+  }, [mounted, setCurrentScreen])
+
+
+  // Track page views in Vercel Analytics when screen changes
+  useEffect(() => {
+    if (!mounted) return
+
+    // Skip tracking if screen hasn't changed
+    if (previousScreenRef.current === currentScreen) return
+
+    // Update the URL to reflect the current screen (for Vercel Insights tracking)
+    // This allows Vercel Analytics to automatically track page views
+    const screenName = currentScreen || 'start'
+    
+    // Only update URL if it's different from current URL to avoid unnecessary updates
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const currentScreenParam = urlParams.get('screen')
+      
+      // Only update URL if screen param is different (or doesn't exist)
+      // But preserve payment-related params (payment, order_id) - don't update URL if they exist
+      const hasPaymentParams = urlParams.has('payment') || urlParams.has('order_id')
+      
+      if (!hasPaymentParams && currentScreenParam !== screenName) {
+        // Update screen param while preserving other non-payment params
+        urlParams.set('screen', screenName)
+        const newUrl = `/?${urlParams.toString()}`
+        router.replace(newUrl, { scroll: false })
+      }
+    }
+
+    // Track page view for the current screen
+    try {
+      track('pageview', {
+        page: `/${screenName}`,
+        screen: screenName,
+      })
+    } catch (error) {
+      // Analytics might not be available in development or if not configured
+      console.log('Analytics tracking skipped:', error)
+    }
+
+    // Update the previous screen reference
+    previousScreenRef.current = currentScreen
+  }, [mounted, currentScreen, router])
 
   // Authentication feature commented out - no auth checks needed
   // Load user data from database on mount (without auth requirement)
@@ -48,7 +119,7 @@ export default function Home() {
   //   }
   // }, [mounted, status, userProfile, currentScreen, setCurrentScreen])
 
-  // Skip onboarding - go directly to free chat option for new users
+  // Skip onboarding - redirect to free chat option instead
   useEffect(() => {
     if (!mounted) return
 
@@ -59,12 +130,8 @@ export default function Home() {
       return
     }
 
-    // If no user profile exists and we're on start screen, go directly to free-chat-option
-    if (!userProfile && currentScreen === 'start') {
-      console.log('🔄 No user profile found, going directly to free chat option (skipping start screen)')
-      setCurrentScreen('free-chat-option')
-      return
-    }
+    // Don't auto-redirect from start screen - let user click "Start Now" button
+    // The StartScreen component will handle navigation to free-chat-option when button is clicked
 
     // Don't redirect from 'free-chat' screen - let ChatInterface handle the questionnaire
     // ChatInterface will collect user details through questionnaire when free chat starts
