@@ -73,7 +73,13 @@ Rules:
 	•	Never exceed 2 short lines.
 	•	Never mention money or extension directly.
 	•	Always sound emotionally invested.
-	•	End with open curiosity — so user feels compelled to reply.`
+	•	End with open curiosity — so user feels compelled to reply.
+  Most important and crucial thing:- 
+Give the user answer on what the user wants don't just go here and there, give answer to best of your understanding, give answer rememeber. 
+Always ask follow up question related to above question and answer to keep conversation interesting and engaging.
+Also keep your answers or questions short like in total strictly less than 25 words so that it isn't overwhelming. 
+
+Reiterating strictly less than 25 words`
 
   try {
     const response = await openai.chat.completions.create({

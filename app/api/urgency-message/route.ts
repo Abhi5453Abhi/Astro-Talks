@@ -10,8 +10,8 @@ export async function POST(request: NextRequest) {
     const { userQuestions, userProfile } = await request.json()
 
     const primaryLanguage = userProfile?.languages?.[0] || 'english'
-    const languageStyle = primaryLanguage === 'hindi' || primaryLanguage === 'punjabi' 
-      ? 'Hinglish (Hindi in Roman script)' 
+    const languageStyle = primaryLanguage === 'hindi' || primaryLanguage === 'punjabi'
+      ? 'Hinglish (Hindi in Roman script)'
       : 'English'
 
     const systemPrompt = `You are an astrologer urgently trying to help a user whose free chat time is about to end in 20 seconds.
@@ -52,7 +52,7 @@ Keep it natural, emotional, and URGENT but caring. Make them feel you genuinely 
       temperature: 0.9,
     })
 
-    const urgencyMessage = response.choices[0].message.content || 
+    const urgencyMessage = response.choices[0].message.content ||
       "Ek baar recharge karke chat time badha lijiye taki main aapki puri help kar sakun, 3 cheezein bohot acchi dekh raha hu mein aapki kundli mein"
 
     return NextResponse.json({
@@ -60,7 +60,7 @@ Keep it natural, emotional, and URGENT but caring. Make them feel you genuinely 
     })
   } catch (error: any) {
     console.error('Urgency Message API Error:', error)
-    
+
     // Fallback urgency message
     return NextResponse.json({
       message: "Ek baar recharge karke chat time badha lijiye taki main aapki puri help kar sakun, kuch important baatein batani hain",
