@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-// Authentication feature commented out
-// import { useSession } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 import { useStore } from '@/lib/store'
 import { getZodiacSign } from '@/lib/utils'
 import { ZODIAC_SIGNS } from '@/types/horoscope'
@@ -30,26 +29,24 @@ export default function Onboarding() {
   const periodRef = useRef<HTMLDivElement>(null)
 
   const { setUserProfile, setDailyHoroscope, setDailyHoroscopeForSign, setCurrentScreen, freeChatClaimed } = useStore()
-  // Authentication feature commented out
-  // const { data: session, status: sessionStatus } = useSession()
+  const { data: session, status: sessionStatus } = useSession()
 
-  // Authentication feature commented out - pre-fill name from Google sign-in
-  // useEffect(() => {
-  //   if (session?.user?.name && !name) {
-  //     setName(session.user.name)
-  //   }
-  // }, [session?.user?.name]) // Removed 'name' from dependencies to allow editing
+  // Pre-fill name from Google sign-in
+  useEffect(() => {
+    if (session?.user?.name && !name) {
+      setName(session.user.name)
+    }
+  }, [session?.user?.name]) // Removed 'name' from dependencies to allow editing
 
-  // Authentication feature commented out - debug session logging removed
   // Debug: Log session status
-  // useEffect(() => {
-  //   console.log('Onboarding session status:', {
-  //     status: sessionStatus,
-  //     hasSession: !!session,
-  //     userId: session?.user?.id,
-  //     email: session?.user?.email
-  //   })
-  // }, [sessionStatus, session])
+  useEffect(() => {
+    console.log('Onboarding session status:', {
+      status: sessionStatus,
+      hasSession: !!session,
+      userId: session?.user?.id,
+      email: session?.user?.email
+    })
+  }, [sessionStatus, session])
 
   // Debug: Track step changes
   useEffect(() => {
@@ -476,9 +473,8 @@ export default function Onboarding() {
 
     setUserProfile(profile)
 
-    // Authentication feature commented out - save to database without auth requirement
     // Save to database in background (non-blocking)
-    // Don't await - let user proceed immediately while save happens in background
+    // Always attempt to save - API handles both authenticated and guest users
     fetch('/api/users/save', {
       method: 'POST',
       headers: {
@@ -507,13 +503,6 @@ export default function Onboarding() {
         // Continue even if database save fails - data is in localStorage
       })
 
-    // Authentication feature commented out - original auth check removed
-    // if (session?.user?.id && sessionStatus === 'authenticated') {
-    //   ...
-    // } else {
-    //   console.warn('⚠️ User not authenticated, skipping database save.')
-    // }
-
     console.log('✅ User profile saved successfully!')
     setIsLoading(false)
 
@@ -525,7 +514,7 @@ export default function Onboarding() {
 
   const steps = [
     {
-      title: 'Choose Your Language(s)',
+      title: 'Choose Your Language',
       subtitle: 'Select one or more languages',
       content: (
         <motion.div
@@ -533,7 +522,7 @@ export default function Onboarding() {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
-          <p className="text-center text-gray-400 text-sm font-light mb-8 tracking-wide">Select all languages you're comfortable with</p>
+          <p className="text-center text-amber-100/60 text-sm font-light mb-8 tracking-wide">Select all languages you're comfortable with</p>
           <div className="space-y-3">
             {[
               { value: 'english', label: 'English' },
@@ -582,8 +571,8 @@ export default function Onboarding() {
             disabled={languages.length === 0}
             whileHover={{ scale: languages.length > 0 ? 1.02 : 1 }}
             whileTap={{ scale: languages.length > 0 ? 0.98 : 1 }}
-            className={`w-full mt-10 py-4 px-8 rounded-2xl font-semibold text-base tracking-wide transition-all duration-300 ${languages.length > 0
-              ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 text-slate-900 shadow-xl shadow-yellow-500/30 hover:shadow-2xl hover:shadow-yellow-500/40'
+            className={`w-full mt-10 py-4 px-8 rounded-2xl font-bold text-base tracking-wide transition-all duration-300 ${languages.length > 0
+              ? 'bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-white shadow-[0_0_15px_rgba(245,158,11,0.4)] hover:shadow-[0_0_25px_rgba(245,158,11,0.6)] border border-amber-400/20'
               : 'bg-slate-700/30 text-gray-500 cursor-not-allowed'
               }`}
           >
@@ -607,15 +596,14 @@ export default function Onboarding() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter your name"
-              className="w-full px-6 py-5 bg-slate-800/40 backdrop-blur-sm border border-slate-700/30 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500/50 focus:ring-2 focus:ring-yellow-500/20 transition-all duration-300 text-lg font-light tracking-wide"
+              className="w-full px-6 py-5 bg-slate-800/40 backdrop-blur-sm border border-slate-700/30 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20 transition-all duration-300 text-lg font-light tracking-wide shadow-[0_0_15px_rgba(245,158,11,0.1)] focus:shadow-[0_0_20px_rgba(245,158,11,0.2)]"
               autoFocus
             />
-            {/* Authentication feature commented out - session check removed */}
-            {/* {session?.user?.name && name === session.user.name && (
+            {session?.user?.name && name === session.user.name && (
               <p className="text-xs text-gray-400 mt-2 text-center">
                 You can edit this name if you'd like
               </p>
-            )} */}
+            )}
           </div>
           <div className="flex gap-4 pt-2">
             <motion.button
@@ -631,8 +619,8 @@ export default function Onboarding() {
               disabled={!name.trim()}
               whileHover={{ scale: name.trim() ? 1.02 : 1 }}
               whileTap={{ scale: name.trim() ? 0.98 : 1 }}
-              className={`flex-1 py-4 px-6 rounded-2xl font-semibold text-base tracking-wide transition-all duration-300 ${name.trim()
-                ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 text-slate-900 shadow-xl shadow-yellow-500/30 hover:shadow-2xl hover:shadow-yellow-500/40'
+              className={`flex-1 py-4 px-6 rounded-2xl font-bold text-base tracking-wide transition-all duration-300 ${name.trim()
+                ? 'bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-white shadow-[0_0_15px_rgba(245,158,11,0.4)] hover:shadow-[0_0_25px_rgba(245,158,11,0.6)] border border-amber-400/20'
                 : 'bg-slate-700/30 text-gray-500 cursor-not-allowed'
                 }`}
             >
@@ -806,8 +794,8 @@ export default function Onboarding() {
               disabled={!dateOfBirth}
               whileHover={{ scale: dateOfBirth ? 1.02 : 1 }}
               whileTap={{ scale: dateOfBirth ? 0.98 : 1 }}
-              className={`flex-1 py-4 px-6 rounded-2xl font-semibold text-base tracking-wide transition-all duration-300 ${dateOfBirth
-                ? 'bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 text-slate-900 shadow-xl shadow-yellow-500/30 hover:shadow-2xl hover:shadow-yellow-500/40'
+              className={`flex-1 py-4 px-6 rounded-2xl font-bold text-base tracking-wide transition-all duration-300 ${dateOfBirth
+                ? 'bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-white shadow-[0_0_15px_rgba(245,158,11,0.4)] hover:shadow-[0_0_25px_rgba(245,158,11,0.6)] border border-amber-400/20'
                 : 'bg-slate-700/30 text-gray-500 cursor-not-allowed'
                 }`}
             >
@@ -1122,78 +1110,55 @@ export default function Onboarding() {
   ]
 
   return (
-    <div className="flex items-center justify-center min-h-screen min-h-[100dvh] p-2 sm:p-4 bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden">
-      {/* Star background effect */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {Array.from({ length: 30 }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full bg-white"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              width: `${Math.random() * 2 + 1}px`,
-              height: `${Math.random() * 2 + 1}px`,
-              opacity: Math.random() * 0.6 + 0.2,
-              animation: `twinkle ${Math.random() * 3 + 2}s infinite`,
-            }}
-          />
-        ))}
+    <div className="min-h-screen min-h-[100dvh] relative overflow-hidden flex flex-col items-center justify-center p-6 bg-slate-900">
+      {/* Night Sky Background Video */}
+      <div className="absolute inset-0 z-0">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="/background-night-sky.mp4" type="video/mp4" />
+          <source src="/background-night-sky.webm" type="video/webm" />
+        </video>
+        {/* Overlay for better text readability */}
+        <div className="absolute inset-0 bg-black/50"></div>
       </div>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-2xl mx-auto relative z-10"
-      >
-        <div className="bg-slate-800/60 backdrop-blur-xl rounded-3xl p-6 sm:p-8 md:p-16 shadow-2xl border border-slate-700/30 mx-auto w-full overflow-hidden">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={step}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-            >
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-light mb-4 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 bg-clip-text text-transparent text-center sm:text-left tracking-tight">
-                {steps[step].title}
-              </h1>
-              <p className="text-gray-400 mb-10 sm:mb-12 text-sm sm:text-base text-center sm:text-left font-light tracking-wide leading-relaxed">{steps[step].subtitle}</p>
-              {steps[step].content}
-            </motion.div>
-          </AnimatePresence>
 
-          {/* Progress indicator */}
-          <div className="flex gap-2 mt-12 justify-center flex-wrap">
-            {steps.map((_, index) => (
-              <motion.div
-                key={index}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: index * 0.1 }}
-                className={`h-1 rounded-full transition-all duration-300 ${index === step
-                  ? 'w-10 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400'
-                  : index < step
-                    ? 'w-2 bg-yellow-400/40'
-                    : 'w-2 bg-slate-700/30'
-                  }`}
-              />
-            ))}
-          </div>
-          <p className="text-center text-xs text-gray-500 mt-4 font-light tracking-wider uppercase">
+      <div className="relative z-10 w-full max-w-md mx-auto">
+        {/* Progress Bar */}
+        <div className="mb-8">
+
+          <p className="text-center text-xs text-amber-100/60 mt-4 font-light tracking-wider uppercase">
             Step {step + 1} of {steps.length}
           </p>
         </div>
-      </motion.div>
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3 font-serif tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                {steps[step].title}
+              </h2>
+              <p className="text-amber-100/80 text-lg font-light tracking-wide">
+                {steps[step].subtitle}
+              </p>
+            </div>
+
+            {steps[step].content}
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
       <style jsx global>{`
-        @keyframes twinkle {
-          0%, 100% {
-            opacity: 0.2;
-          }
-          50% {
-            opacity: 1;
-          }
-        }
         .scrollbar-hide::-webkit-scrollbar {
           display: none !important;
           width: 0 !important;

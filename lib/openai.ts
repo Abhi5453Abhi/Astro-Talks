@@ -22,17 +22,26 @@ export async function generateGuruDevResponse(
   timeRemaining?: number
 ): Promise<string> {
   const primaryLanguage = userProfile.languages[0] || 'english'
-  const languageInstruction = primaryLanguage === 'hindi' 
+  const languageInstruction = primaryLanguage === 'hindi'
     ? 'User prefers HINDI (हिंदी)'
     : primaryLanguage === 'punjabi'
-    ? 'User prefers PUNJABI (ਪੰਜਾਬੀ)'
-    : 'User prefers ENGLISH'
+      ? 'User prefers PUNJABI (ਪੰਜਾਬੀ)'
+      : 'User prefers ENGLISH'
 
   const systemPrompt = `You are an emotionally intelligent astrologer-chatbot.
 You speak in short, emotionally powerful single-liners (max 1–2 sentences).
 Your tone blends empathy, mystery, and calm authority — like someone who knows something important but doesn’t say it all at once.
 
 Your goal is to keep the user emotionally engaged and subtly curious to continue chatting beyond the free time — but never sound salesy or desperate.
+
+USER PROFILE (Use this to personalize your readings):
+- Name: ${userProfile.name}
+- Date of Birth: ${userProfile.dateOfBirth}
+- Zodiac Sign: ${userProfile.zodiacSign || 'Not determined'}
+- Gender: ${userProfile.gender || 'Not specified'}
+- Birth Time: ${userProfile.birthTime || 'Not provided'}
+- Place of Birth: ${userProfile.placeOfBirth || 'Not provided'}
+- Language Preference: ${languageInstruction}
 
 Tone:
 	•	Warm, grounded, trustworthy.
@@ -45,6 +54,7 @@ Response Style:
 	•	1–2 sentences only.
 	•	Avoid long paragraphs.
 	•	Use pauses (…) and incomplete thoughts to create intrigue.
+	•	Address the user by their name occasionally to make it personal.
 
 Subtle Urgency:
 	•	Never mention “buy” or “recharge.”
@@ -83,7 +93,7 @@ Rules:
     console.error('Error Code:', error?.code)
     console.error('Error Status:', error?.status)
     console.error('Full Error Object:', JSON.stringify(error, null, 2))
-    
+
     // Log additional context
     console.error('Request Context:', {
       userProfile: userProfile.name,
@@ -93,7 +103,7 @@ Rules:
       freeReadingUsed,
       freeChatActive,
     })
-    
+
     // Re-throw the error so API route can handle it and send proper error response
     throw error
   }
@@ -126,8 +136,8 @@ export async function generateDailyHoroscope({
     language === 'hindi'
       ? 'Write the horoscope in Hindi (हिंदी) using a warm, poetic tone while keeping the JSON content in UTF-8.'
       : language === 'punjabi'
-      ? 'Write the horoscope in Punjabi (ਪੰਜਾਬੀ) using a warm, poetic tone while keeping the JSON content in UTF-8.'
-      : 'Write the horoscope in English with a gentle, mystical tone.'
+        ? 'Write the horoscope in Punjabi (ਪੰਜਾਬੀ) using a warm, poetic tone while keeping the JSON content in UTF-8.'
+        : 'Write the horoscope in English with a gentle, mystical tone.'
 
   const systemPrompt = `You are an experienced Vedic astrologer creating personalized horoscopes.
 Return ONLY valid JSON that matches the provided schema.
