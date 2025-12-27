@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import NextImage from 'next/image'
 import { useStore } from '@/lib/store'
 import type {
   DailyHoroscopePayload,
@@ -206,8 +207,23 @@ export default function DailyHoroscope() {
     new Date().toISOString().split('T')[0]
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-blue-950 to-slate-900 text-white pb-32">
-      <header className="sticky top-0 z-20 bg-slate-950/60 backdrop-blur-lg border-b border-white/5">
+    <div className="min-h-screen text-white pb-32 relative">
+      {/* Night Sky Background Image */}
+      <div className="fixed inset-0 z-0">
+        <NextImage
+          src="/background-night-sky.png"
+          alt="Night Sky Background"
+          fill
+          className="object-cover"
+          priority
+          quality={90}
+          unoptimized
+        />
+        {/* Overlay for better content readability */}
+        <div className="absolute inset-0 bg-black/30"></div>
+      </div>
+      <div className="relative z-10">
+        <header className="sticky top-0 z-20 bg-slate-950/60 backdrop-blur-lg border-b border-white/5">
         <div className="mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-4">
           <button
             type="button"
@@ -390,6 +406,7 @@ export default function DailyHoroscope() {
           </>
         )}
       </main>
+      </div>
     </div>
   )
 }

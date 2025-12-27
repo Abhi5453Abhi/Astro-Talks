@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
 import { useStore } from '@/lib/store'
 import type { BirthDetails, NatalChart, DashaPeriod, TransitData } from '@/lib/kundali/types'
 
@@ -164,7 +165,22 @@ export default function FreeKundli() {
 
   if (!userProfile) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 relative">
+        {/* Night Sky Background Image */}
+        <div className="fixed inset-0 z-0">
+          <Image
+            src="/background-night-sky.png"
+            alt="Night Sky Background"
+            fill
+            className="object-cover"
+            priority
+            quality={90}
+            unoptimized
+          />
+          {/* Overlay for better content readability */}
+          <div className="absolute inset-0 bg-black/30"></div>
+        </div>
+        <div className="relative z-10">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -178,6 +194,7 @@ export default function FreeKundli() {
             Get Started
           </button>
         </motion.div>
+        </div>
       </div>
     )
   }
@@ -193,7 +210,23 @@ export default function FreeKundli() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-blue-950 to-slate-900 text-white">
+    <div className="min-h-screen text-white relative">
+      {/* Night Sky Background Video */}
+      <div className="fixed inset-0 z-0">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="/background-night-sky.mp4" type="video/mp4" />
+          <source src="/background-night-sky.webm" type="video/webm" />
+        </video>
+        {/* Overlay for better content readability */}
+        <div className="absolute inset-0 bg-black/30"></div>
+      </div>
+      <div className="relative z-10">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-slate-950/60 backdrop-blur-lg border-b border-white/5">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-4">
@@ -408,6 +441,7 @@ export default function FreeKundli() {
           </>
         )}
       </main>
+      </div>
     </div>
   )
 }

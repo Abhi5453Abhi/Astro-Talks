@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 
 interface FreeChatOptionProps {
   onStartFreeChat: () => void
@@ -9,23 +10,20 @@ interface FreeChatOptionProps {
 
 export default function FreeChatOption({ onStartFreeChat, onSkip }: FreeChatOptionProps) {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden">
-      {/* Star background effect */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {Array.from({ length: 30 }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full bg-white"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              width: `${Math.random() * 2 + 1}px`,
-              height: `${Math.random() * 2 + 1}px`,
-              opacity: Math.random() * 0.6 + 0.2,
-              animation: `twinkle ${Math.random() * 3 + 2}s infinite`,
-            }}
-          />
-        ))}
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Night Sky Background Image */}
+      <div className="fixed inset-0 z-0">
+        <Image
+          src="/background-night-sky.png"
+          alt="Night Sky Background"
+          fill
+          className="object-cover"
+          priority
+          quality={90}
+          unoptimized
+        />
+        {/* Overlay for better content readability */}
+        <div className="absolute inset-0 bg-black/30"></div>
       </div>
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
@@ -70,7 +68,7 @@ export default function FreeChatOption({ onStartFreeChat, onSkip }: FreeChatOpti
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={onStartFreeChat}
-            className="w-full py-4 px-6 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 rounded-xl font-semibold text-lg text-gray-900 transition-all shadow-lg"
+            className="w-full py-4 px-6 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 rounded-xl font-bold text-lg text-white transition-all shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:shadow-[0_0_30px_rgba(245,158,11,0.6)] border border-amber-400/20"
           >
             Start Free Chat ⏱️
           </motion.button>
