@@ -4,15 +4,20 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSession } from 'next-auth/react'
 import { useStore } from '@/lib/store'
+import { useScreenTime, trackClick } from '@/lib/analytics'
 // Google sign-in feature commented out
 // import GoogleSignInButton from '@/components/GoogleSignInButton'
 
 export default function StartScreen() {
+  // Track screen time
+  useScreenTime('start')
+
   const { setCurrentScreen } = useStore()
   const { status } = useSession()
   const [showSignIn, setShowSignIn] = useState(false)
 
   const handleStartNow = () => {
+    trackClick('start_now', 'start')
     // Navigate to onboarding screen to collect user details
     setCurrentScreen('onboarding')
   }

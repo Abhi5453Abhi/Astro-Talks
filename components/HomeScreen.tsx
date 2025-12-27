@@ -10,9 +10,13 @@ import { useStore } from '@/lib/store'
 // import AuthButton from '@/components/AuthButton'
 import RealCall from '@/components/RealCall'
 import AstrologerCard from '@/components/AstrologerCard'
-import { Home, MessageCircle, Radio, Phone, Sparkles, Sun, ScrollText, Heart, BookOpen } from 'lucide-react'
+import { Home, MessageCircle, Sparkles, Sun, ScrollText, Heart, BookOpen } from 'lucide-react'
+import { useScreenTime, trackClick, trackFeatureUsage } from '@/lib/analytics'
 
 export default function HomeScreen() {
+  // Track screen time
+  useScreenTime('home')
+
   // Authentication feature commented out
   // const { data: session } = useSession()
   const {
@@ -22,7 +26,6 @@ export default function HomeScreen() {
     currentScreen,
     setCurrentScreen,
   } = useStore()
-  const [searchQuery, setSearchQuery] = useState('')
   const [showCall, setShowCall] = useState(false)
   const [astrologerUserId, setAstrologerUserId] = useState<string | null>(null)
   const [callError, setCallError] = useState<string | null>(null)
@@ -104,14 +107,37 @@ export default function HomeScreen() {
       icon: <Sun className="w-8 h-8 text-white" />,
       label: 'Daily\nHoroscope',
       color: 'from-amber-400 to-amber-600',
-      action: () => setCurrentScreen('daily-horoscope'),
+      action: () => {
+        trackClick('feature_daily_horoscope', 'home')
+        setCurrentScreen('daily-horoscope')
+      },
     },
-    { icon: <ScrollText className="w-8 h-8 text-white" />, label: 'Free\nKundli', color: 'from-amber-400 to-amber-600' },
-    { icon: <Heart className="w-8 h-8 text-white" />, label: 'Kundli\nMatching', color: 'from-amber-400 to-amber-600' },
-    { icon: <BookOpen className="w-8 h-8 text-white" />, label: 'Astrology\nBlog', color: 'from-amber-400 to-amber-600' },
+    {
+      icon: <ScrollText className="w-8 h-8 text-white" />,
+      label: 'Free\nKundli',
+      color: 'from-amber-400 to-amber-600',
+      action: () => trackClick('feature_free_kundli', 'home')
+    },
+    {
+      icon: <Heart className="w-8 h-8 text-white" />,
+      label: 'Kundli\nMatching',
+      color: 'from-amber-400 to-amber-600',
+      action: () => trackClick('feature_kundli_matching', 'home')
+    },
+    {
+      icon: <BookOpen className="w-8 h-8 text-white" />,
+      label: 'Astrology\nBlog',
+      color: 'from-amber-400 to-amber-600',
+      action: () => trackClick('feature_astrology_blog', 'home')
+    },
   ]
 
   const handleChatWithAstrologer = () => {
+    trackClick('chat_now', 'home', {
+      has_profile: !!userProfile?.dateOfBirth,
+      free_chat_claimed: freeChatClaimed
+    })
+
     // Check if user has completed onboarding
     if (!userProfile || !userProfile.dateOfBirth) {
       // If no profile, go to free-chat-option (onboarding skipped)
@@ -129,6 +155,8 @@ export default function HomeScreen() {
   }
 
   const handleCallWithAstrologer = async () => {
+    trackClick('call_now', 'home', { wallet_balance: walletBalance })
+
     // Authentication feature commented out - no login check needed
     // if (!session?.user?.id) {
     //   alert('Please login to make a call')
@@ -201,22 +229,18 @@ export default function HomeScreen() {
         <AuthButton variant="primary" />
       </div> */}
 
-      {/* Search Bar */}
+      {/* Horoscope Button */}
       <div className="px-4 py-4 relative z-10">
-        <div className="relative">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search"
-            className="w-full px-4 py-3 pl-4 pr-12 bg-slate-800/80 backdrop-blur-sm border border-slate-700/50 rounded-full text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 shadow-lg"
-          />
-          <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </button>
-        </div>
+        <button
+          onClick={() => {
+            trackClick('view_horoscope_main', 'home')
+            setCurrentScreen('daily-horoscope')
+          }}
+          className="w-full px-4 py-3 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 rounded-full text-white font-bold shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 transition-all duration-300 flex items-center justify-center gap-3"
+        >
+          <Sun className="w-6 h-6" />
+          <span className="text-lg tracking-wide">View Your Horoscope</span>
+        </button>
       </div>
 
       {/* Feature Buttons */}
@@ -250,7 +274,10 @@ export default function HomeScreen() {
               50% CASHBACK!
             </h2>
             <p className="text-white text-sm mb-4">on your next Recharge</p>
-            <button className="px-8 py-3 bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold rounded-full hover:shadow-[0_0_20px_rgba(245,158,11,0.5)] transition-all shadow-lg tracking-wide uppercase text-sm">
+            <button
+              onClick={() => trackClick('recharge_now', 'home', { wallet_balance: walletBalance })}
+              className="px-8 py-3 bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold rounded-full hover:shadow-[0_0_20px_rgba(245,158,11,0.5)] transition-all shadow-lg tracking-wide uppercase text-sm"
+            >
               RECHARGE NOW
             </button>
           </div>
@@ -291,7 +318,13 @@ export default function HomeScreen() {
               <AstrologerCard
                 key={astrologer.id}
                 astrologer={astrologer}
-                onChat={() => handleChatWithAstrologer()}
+                onChat={() => {
+                  trackClick('astrologer_card_chat', 'home', {
+                    astrologer_name: astrologer.name,
+                    astrologer_id: astrologer.id
+                  })
+                  handleChatWithAstrologer()
+                }}
               />
             ))}
           </div>
@@ -302,7 +335,7 @@ export default function HomeScreen() {
         <>
           {/* Action Buttons */}
           <div className="fixed bottom-20 left-0 right-0 px-4 z-30 pointer-events-none">
-            <div className="mx-auto grid w-full max-w-lg grid-cols-2 gap-3 sm:gap-4 pointer-events-auto">
+            <div className="mx-auto max-w-lg pointer-events-auto">
               <button
                 onClick={handleChatWithAstrologer}
                 className="flex w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold tracking-wide py-3 px-4 shadow-[0_0_15px_rgba(245,158,11,0.4)] transition-all duration-300 hover:shadow-[0_0_25px_rgba(245,158,11,0.6)] sm:px-6 sm:py-3.5 border border-amber-300/20"
@@ -312,50 +345,49 @@ export default function HomeScreen() {
                 </div>
                 <span className="text-sm font-bold whitespace-nowrap">Chat Now</span>
               </button>
-              <button
-                onClick={handleCallWithAstrologer}
-                className="flex w-full items-center justify-center gap-3 rounded-full bg-slate-800 text-white font-bold tracking-wide py-3 px-4 shadow-lg border border-slate-700/50 transition-all duration-300 hover:bg-slate-700 sm:px-6 sm:py-3.5"
-              >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-700 text-white">
-                  <Phone className="w-4 h-4" />
-                </div>
-                <span className="text-sm font-bold whitespace-nowrap">Call Now</span>
-              </button>
             </div>
           </div>
 
           {/* Bottom Navigation */}
           <div className="fixed bottom-0 left-0 right-0 bg-slate-900/90 backdrop-blur-xl border-t border-slate-800/50 px-6 py-4 shadow-2xl z-20 pb-safe">
-            <div className="flex items-center justify-between max-w-md mx-auto w-full">
-              <button className="flex flex-col items-center gap-1.5 group">
+            <div className="flex items-center justify-around max-w-md mx-auto w-full">
+              <button
+                onClick={() => trackClick('bottom_nav_home', 'home')}
+                className="flex flex-col items-center gap-1.5 group"
+              >
                 <div className="p-1 rounded-xl transition-all duration-300 group-hover:bg-amber-500/10">
                   <Home className="w-7 h-7 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" strokeWidth={2.5} />
                 </div>
                 <span className="text-[10px] font-bold tracking-wider text-amber-100/90 uppercase">Home</span>
               </button>
 
-              <button className="flex flex-col items-center gap-1.5 group">
+              <button
+                onClick={() => {
+                  trackClick('bottom_nav_horoscope', 'home')
+                  setCurrentScreen('daily-horoscope')
+                }}
+                className="flex flex-col items-center gap-1.5 group"
+              >
+                <div className="p-1 rounded-xl transition-all duration-300 group-hover:bg-slate-800">
+                  <Sun className="w-7 h-7 text-slate-400 group-hover:text-amber-200 transition-colors" strokeWidth={2} />
+                </div>
+                <span className="text-[10px] font-medium tracking-wider text-slate-400 group-hover:text-amber-100/80 transition-colors uppercase">Horoscope</span>
+              </button>
+
+              <button
+                onClick={handleChatWithAstrologer}
+                className="flex flex-col items-center gap-1.5 group"
+              >
                 <div className="p-1 rounded-xl transition-all duration-300 group-hover:bg-slate-800">
                   <MessageCircle className="w-7 h-7 text-slate-400 group-hover:text-amber-200 transition-colors" strokeWidth={2} />
                 </div>
                 <span className="text-[10px] font-medium tracking-wider text-slate-400 group-hover:text-amber-100/80 transition-colors uppercase">Chat</span>
               </button>
 
-              <button className="flex flex-col items-center gap-1.5 group">
-                <div className="p-1 rounded-xl transition-all duration-300 group-hover:bg-slate-800">
-                  <Radio className="w-7 h-7 text-slate-400 group-hover:text-amber-200 transition-colors" strokeWidth={2} />
-                </div>
-                <span className="text-[10px] font-medium tracking-wider text-slate-400 group-hover:text-amber-100/80 transition-colors uppercase">Live</span>
-              </button>
-
-              <button className="flex flex-col items-center gap-1.5 group">
-                <div className="p-1 rounded-xl transition-all duration-300 group-hover:bg-slate-800">
-                  <Phone className="w-7 h-7 text-slate-400 group-hover:text-amber-200 transition-colors" strokeWidth={2} />
-                </div>
-                <span className="text-[10px] font-medium tracking-wider text-slate-400 group-hover:text-amber-100/80 transition-colors uppercase">Call</span>
-              </button>
-
-              <button className="flex flex-col items-center gap-1.5 group">
+              <button
+                onClick={() => trackClick('bottom_nav_remedies', 'home')}
+                className="flex flex-col items-center gap-1.5 group"
+              >
                 <div className="p-1 rounded-xl transition-all duration-300 group-hover:bg-slate-800">
                   <Sparkles className="w-7 h-7 text-slate-400 group-hover:text-amber-200 transition-colors" strokeWidth={2} />
                 </div>
