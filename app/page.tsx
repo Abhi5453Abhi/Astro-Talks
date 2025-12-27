@@ -3,8 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-// Authentication feature commented out
-// import { useSession } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 import { track } from '@vercel/analytics'
 import Onboarding from '@/components/Onboarding'
 import ChatInterface from '@/components/ChatInterface'
@@ -18,8 +17,7 @@ import { ASTROLOGER } from '@/lib/astrologer'
 
 export default function Home() {
   const { userProfile, currentScreen, freeChatClaimed, setCurrentScreen, setFreeChatActive, setFreeChatStartTime, setFreeChatClaimed, syncFromDatabase } = useStore()
-  // Authentication feature commented out
-  // const { status } = useSession()
+  const { status } = useSession()
   const [mounted, setMounted] = useState(false)
   const previousScreenRef = useRef<typeof currentScreen | null>(null)
   const hasInitializedRef = useRef(false)
@@ -34,11 +32,11 @@ export default function Home() {
   // Force start screen on first load (unless URL specifies otherwise)
   useEffect(() => {
     if (!mounted || hasInitializedRef.current) return
-    
+
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search)
       const screenParam = urlParams.get('screen')
-      
+
       // If no screen parameter in URL, force start screen
       // This overrides any persisted state to ensure fresh visitors see the start screen
       if (!screenParam) {
@@ -62,16 +60,16 @@ export default function Home() {
     // Update the URL to reflect the current screen (for Vercel Insights tracking)
     // This allows Vercel Analytics to automatically track page views
     const screenName = currentScreen || 'start'
-    
+
     // Only update URL if it's different from current URL to avoid unnecessary updates
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search)
       const currentScreenParam = urlParams.get('screen')
-      
+
       // Only update URL if screen param is different (or doesn't exist)
       // But preserve payment-related params (payment, order_id) - don't update URL if they exist
       const hasPaymentParams = urlParams.has('payment') || urlParams.has('order_id')
-      
+
       if (!hasPaymentParams && currentScreenParam !== screenName) {
         // Update screen param while preserving other non-payment params
         urlParams.set('screen', screenName)
@@ -107,31 +105,23 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted]) // Remove syncFromDatabase from dependencies to prevent repeated syncing
 
-  // Authentication feature commented out - no auth state changes to handle
-  // useEffect(() => {
-  //   if (mounted && status === 'authenticated') {
-  //     // If user just signed in (from dashboard or start screen), check if they need onboarding
-  //     // Redirect if no profile OR if dateOfBirth is missing (incomplete profile)
-  //     if ((!userProfile || !userProfile.dateOfBirth) && currentScreen !== 'onboarding' && currentScreen !== 'start') {
-  //       console.log('🔄 User authenticated but incomplete profile, redirecting to onboarding')
-  //       setCurrentScreen('onboarding')
-  //     }
-  //   }
-  // }, [mounted, status, userProfile, currentScreen, setCurrentScreen])
+  useEffect(() => {
+    if (mounted && status === 'authenticated') {
+      // If user just signed in (from dashboard or start screen), check if they need onboarding
+      // Redirect if no profile OR if dateOfBirth is missing (incomplete profile)
+      if ((!userProfile || !userProfile.dateOfBirth) && currentScreen !== 'onboarding' && currentScreen !== 'start') {
+        console.log('🔄 User authenticated but incomplete profile, redirecting to onboarding')
+        setCurrentScreen('onboarding')
+      }
+    }
+  }, [mounted, status, userProfile, currentScreen, setCurrentScreen])
 
-  // Skip onboarding - redirect to free chat option instead
+  // Show onboarding for user details collection
   useEffect(() => {
     if (!mounted) return
 
-    // If user tries to go to onboarding, redirect to free-chat-option instead
-    if (currentScreen === 'onboarding') {
-      console.log('🔄 Skipping onboarding, redirecting to free chat option')
-      setCurrentScreen('free-chat-option')
-      return
-    }
-
     // Don't auto-redirect from start screen - let user click "Start Now" button
-    // The StartScreen component will handle navigation to free-chat-option when button is clicked
+    // The StartScreen component will handle navigation to onboarding when button is clicked
 
     // Don't redirect from 'free-chat' screen - let ChatInterface handle the questionnaire
     // ChatInterface will collect user details through questionnaire when free chat starts
@@ -257,8 +247,7 @@ export default function Home() {
       {currentScreen === 'start' ? (
         <StartScreen />
       ) : currentScreen === 'onboarding' ? (
-        // Skip onboarding - show free chat option instead (redirect handled in useEffect)
-        <FreeChatOption onStartFreeChat={handleStartFreeChat} onSkip={handleSkip} />
+        <Onboarding />
       ) : currentScreen === 'home' ? (
         <HomeScreen />
       ) : currentScreen === 'chat' ? (

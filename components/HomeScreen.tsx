@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 // Authentication feature commented out
 // import { useSession } from 'next-auth/react'
 import { useStore } from '@/lib/store'
@@ -9,6 +10,7 @@ import { useStore } from '@/lib/store'
 // import AuthButton from '@/components/AuthButton'
 import RealCall from '@/components/RealCall'
 import AstrologerCard from '@/components/AstrologerCard'
+import { Home, MessageCircle, Radio, Phone, Sparkles, Sun, ScrollText, Heart, BookOpen } from 'lucide-react'
 
 export default function HomeScreen() {
   // Authentication feature commented out
@@ -99,14 +101,14 @@ export default function HomeScreen() {
 
   const features = [
     {
-      icon: '🌅',
+      icon: <Sun className="w-8 h-8 text-white" />,
       label: 'Daily\nHoroscope',
-      color: 'from-yellow-400 to-yellow-500',
+      color: 'from-amber-400 to-amber-600',
       action: () => setCurrentScreen('daily-horoscope'),
     },
-    { icon: '📋', label: 'Free\nKundli', color: 'from-yellow-400 to-yellow-500' },
-    { icon: '💍', label: 'Kundli\nMatching', color: 'from-yellow-400 to-yellow-500' },
-    { icon: '📖', label: 'Astrology\nBlog', color: 'from-yellow-400 to-yellow-500' },
+    { icon: <ScrollText className="w-8 h-8 text-white" />, label: 'Free\nKundli', color: 'from-amber-400 to-amber-600' },
+    { icon: <Heart className="w-8 h-8 text-white" />, label: 'Kundli\nMatching', color: 'from-amber-400 to-amber-600' },
+    { icon: <BookOpen className="w-8 h-8 text-white" />, label: 'Astrology\nBlog', color: 'from-amber-400 to-amber-600' },
   ]
 
   const handleChatWithAstrologer = () => {
@@ -116,7 +118,7 @@ export default function HomeScreen() {
       setCurrentScreen('free-chat-option')
       return
     }
-    
+
     // If free chat already claimed, go directly to chat
     // Otherwise, show the free chat option first
     if (freeChatClaimed) {
@@ -159,34 +161,31 @@ export default function HomeScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 pb-40 relative overflow-hidden">
-      {/* Star background effect */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {Array.from({ length: 30 }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full bg-white"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              width: `${Math.random() * 2 + 1}px`,
-              height: `${Math.random() * 2 + 1}px`,
-              opacity: Math.random() * 0.6 + 0.2,
-              animation: `twinkle ${Math.random() * 3 + 2}s infinite`,
-            }}
-          />
-        ))}
+    <div className="min-h-screen pb-40 relative overflow-hidden">
+      {/* Night Sky Background Image */}
+      <div className="fixed inset-0 z-0">
+        <Image
+          src="/background-night-sky.png"
+          alt="Night Sky Background"
+          fill
+          className="object-cover"
+          priority
+          quality={90}
+          unoptimized
+        />
+        {/* Overlay for better content readability */}
+        <div className="absolute inset-0 bg-black/30"></div>
       </div>
 
       {/* Header */}
-      <div className="bg-slate-800/80 backdrop-blur-sm px-4 py-3 flex items-center justify-between shadow-lg border-b border-slate-700/50 relative z-10">
+      <div className="bg-slate-800/90 backdrop-blur-md px-4 py-3 flex items-center justify-between shadow-lg border-b border-slate-700/50 relative z-10">
         <button className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500 flex items-center justify-center text-2xl">
           {userProfile?.name?.charAt(0).toUpperCase() || '😊'}
         </button>
 
         <div className="flex items-center gap-2 px-4 py-2 bg-slate-700/50 border border-slate-600/50 rounded-full shadow-sm">
           <span className="font-bold text-white">₹ {walletBalance}</span>
-          <button className="w-6 h-6 rounded-full bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center text-white text-sm font-bold">
+          <button className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-lg font-bold shadow-lg shadow-amber-500/30">
             +
           </button>
         </div>
@@ -227,12 +226,12 @@ export default function HomeScreen() {
             <button
               key={index}
               onClick={feature.action}
-              className="flex flex-col items-center gap-2"
+              className="flex flex-col items-center gap-3 group"
             >
-              <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${feature.color} flex items-center justify-center text-3xl shadow-lg hover:scale-105 transition-transform`}>
+              <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center text-3xl shadow-lg shadow-amber-500/20 group-hover:scale-105 group-hover:shadow-amber-500/40 transition-all duration-300`}>
                 {feature.icon}
               </div>
-              <span className="text-xs text-white text-center leading-tight whitespace-pre-line font-medium">
+              <span className="text-xs text-white/90 text-center leading-tight whitespace-pre-line font-medium tracking-wide">
                 {feature.label}
               </span>
             </button>
@@ -251,7 +250,7 @@ export default function HomeScreen() {
               50% CASHBACK!
             </h2>
             <p className="text-white text-sm mb-4">on your next Recharge</p>
-            <button className="px-6 py-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 font-bold rounded-full hover:from-yellow-500 hover:to-yellow-600 transition-all shadow-lg">
+            <button className="px-8 py-3 bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold rounded-full hover:shadow-[0_0_20px_rgba(245,158,11,0.5)] transition-all shadow-lg tracking-wide uppercase text-sm">
               RECHARGE NOW
             </button>
           </div>
@@ -261,7 +260,7 @@ export default function HomeScreen() {
       {/* My Sessions */}
       <div className="px-4 py-4 relative z-10">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-bold text-white">My Sessions</h3>
+          <h3 className="text-xl font-bold text-white font-serif tracking-wide">My Sessions</h3>
           <button className="text-sm text-yellow-400 font-semibold hover:text-yellow-300">View All</button>
         </div>
         <div className="bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-md p-4 border border-slate-700/50">
@@ -276,7 +275,7 @@ export default function HomeScreen() {
       {/* Astrologers Section */}
       <div className="px-4 py-4 relative z-10 pb-32">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-bold text-white">Astrologers</h3>
+          <h3 className="text-xl font-bold text-white font-serif tracking-wide">Astrologers</h3>
           <button className="text-sm text-yellow-400 font-semibold hover:text-yellow-300">View All</button>
         </div>
 
@@ -306,47 +305,61 @@ export default function HomeScreen() {
             <div className="mx-auto grid w-full max-w-lg grid-cols-2 gap-3 sm:gap-4 pointer-events-auto">
               <button
                 onClick={handleChatWithAstrologer}
-                className="flex w-full items-center justify-center gap-3 rounded-full bg-white text-slate-900 font-semibold tracking-wide py-3 px-4 shadow-[0_6px_18px_rgba(15,23,42,0.24)] transition-all duration-200 hover:shadow-[0_10px_26px_rgba(15,23,42,0.3)] sm:px-6 sm:py-3.5"
+                className="flex w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 text-white font-bold tracking-wide py-3 px-4 shadow-[0_0_15px_rgba(245,158,11,0.4)] transition-all duration-300 hover:shadow-[0_0_25px_rgba(245,158,11,0.6)] sm:px-6 sm:py-3.5 border border-amber-300/20"
               >
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-lg text-slate-900">
-                  💬
-                </span>
-                <span className="text-xs text-slate-900 whitespace-nowrap sm:text-sm">Chat with Astrologer</span>
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white">
+                  <MessageCircle className="w-5 h-5" />
+                </div>
+                <span className="text-sm font-bold whitespace-nowrap">Chat Now</span>
               </button>
               <button
                 onClick={handleCallWithAstrologer}
-                className="flex w-full items-center justify-center gap-3 rounded-full bg-white text-slate-900 font-semibold tracking-wide py-3 px-4 shadow-[0_6px_18px_rgba(15,23,42,0.24)] transition-all duration-200 hover:shadow-[0_10px_26px_rgba(15,23,42,0.3)] sm:px-6 sm:py-3.5"
+                className="flex w-full items-center justify-center gap-3 rounded-full bg-slate-800 text-white font-bold tracking-wide py-3 px-4 shadow-lg border border-slate-700/50 transition-all duration-300 hover:bg-slate-700 sm:px-6 sm:py-3.5"
               >
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-lg text-slate-900">
-                  📞
-                </span>
-                <span className="text-xs text-slate-900 whitespace-nowrap sm:text-sm">Call with Astrologer</span>
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-700 text-white">
+                  <Phone className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-bold whitespace-nowrap">Call Now</span>
               </button>
             </div>
           </div>
 
           {/* Bottom Navigation */}
-          <div className="fixed bottom-0 left-0 right-0 bg-slate-800/90 backdrop-blur-sm border-t border-slate-700/50 px-4 py-2 shadow-lg z-20">
-            <div className="flex items-center justify-around">
-              <button className="flex flex-col items-center gap-1 text-yellow-400">
-                <span className="text-2xl">🏠</span>
-                <span className="text-xs font-semibold">Home</span>
+          <div className="fixed bottom-0 left-0 right-0 bg-slate-900/90 backdrop-blur-xl border-t border-slate-800/50 px-6 py-4 shadow-2xl z-20 pb-safe">
+            <div className="flex items-center justify-between max-w-md mx-auto w-full">
+              <button className="flex flex-col items-center gap-1.5 group">
+                <div className="p-1 rounded-xl transition-all duration-300 group-hover:bg-amber-500/10">
+                  <Home className="w-7 h-7 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" strokeWidth={2.5} />
+                </div>
+                <span className="text-[10px] font-bold tracking-wider text-amber-100/90 uppercase">Home</span>
               </button>
-              <button className="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-300">
-                <span className="text-2xl">💬</span>
-                <span className="text-xs">Chat</span>
+
+              <button className="flex flex-col items-center gap-1.5 group">
+                <div className="p-1 rounded-xl transition-all duration-300 group-hover:bg-slate-800">
+                  <MessageCircle className="w-7 h-7 text-slate-400 group-hover:text-amber-200 transition-colors" strokeWidth={2} />
+                </div>
+                <span className="text-[10px] font-medium tracking-wider text-slate-400 group-hover:text-amber-100/80 transition-colors uppercase">Chat</span>
               </button>
-              <button className="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-300">
-                <span className="text-2xl">📺</span>
-                <span className="text-xs">Live</span>
+
+              <button className="flex flex-col items-center gap-1.5 group">
+                <div className="p-1 rounded-xl transition-all duration-300 group-hover:bg-slate-800">
+                  <Radio className="w-7 h-7 text-slate-400 group-hover:text-amber-200 transition-colors" strokeWidth={2} />
+                </div>
+                <span className="text-[10px] font-medium tracking-wider text-slate-400 group-hover:text-amber-100/80 transition-colors uppercase">Live</span>
               </button>
-              <button className="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-300">
-                <span className="text-2xl">📞</span>
-                <span className="text-xs">Call</span>
+
+              <button className="flex flex-col items-center gap-1.5 group">
+                <div className="p-1 rounded-xl transition-all duration-300 group-hover:bg-slate-800">
+                  <Phone className="w-7 h-7 text-slate-400 group-hover:text-amber-200 transition-colors" strokeWidth={2} />
+                </div>
+                <span className="text-[10px] font-medium tracking-wider text-slate-400 group-hover:text-amber-100/80 transition-colors uppercase">Call</span>
               </button>
-              <button className="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-300">
-                <span className="text-2xl">🙏</span>
-                <span className="text-xs">Remedies</span>
+
+              <button className="flex flex-col items-center gap-1.5 group">
+                <div className="p-1 rounded-xl transition-all duration-300 group-hover:bg-slate-800">
+                  <Sparkles className="w-7 h-7 text-slate-400 group-hover:text-amber-200 transition-colors" strokeWidth={2} />
+                </div>
+                <span className="text-[10px] font-medium tracking-wider text-slate-400 group-hover:text-amber-100/80 transition-colors uppercase">Remedies</span>
               </button>
             </div>
           </div>
