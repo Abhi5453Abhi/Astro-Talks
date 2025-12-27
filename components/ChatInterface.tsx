@@ -12,6 +12,7 @@ import PaymentModal from './PaymentModal'
 import CashbackOfferModal from './CashbackOfferModal'
 import ContinueChatBanner from './ContinueChatBanner'
 import VoiceCall from './VideoCall'
+import { Sparkles } from 'lucide-react'
 import { ASTROLOGER } from '@/lib/astrologer'
 
 export default function ChatInterface() {
@@ -342,7 +343,12 @@ export default function ChatInterface() {
 
         const userDetailsMessage = `Hi, Below are my details:
 Name: ${userProfile.name}
-Date of Birth: ${formattedDOB}`
+Date of Birth: ${formattedDOB}
+Gender: ${userProfile.gender || 'Not specified'}
+Birth Time: ${userProfile.birthTime || 'Not provided'}
+Place of Birth: ${userProfile.placeOfBirth || 'Not provided'}
+Zodiac Sign: ${userProfile.zodiacSign || 'Not determined'}
+Languages: ${userProfile.languages?.join(', ') || 'English'}`
 
         addMessage({
           id: `user-details-${Date.now()}`,
@@ -475,7 +481,12 @@ Date of Birth: ${formattedDOB}`
 
     const userDetailsMessage = `Hi, Below are my details:
 Name: ${updatedProfile.name}
-Date of Birth: ${formattedDOB}`
+Date of Birth: ${formattedDOB}
+Gender: ${updatedProfile.gender || 'Not specified'}
+Birth Time: ${updatedProfile.birthTime || 'Not provided'}
+Place of Birth: ${updatedProfile.placeOfBirth || 'Not provided'}
+Zodiac Sign: ${updatedProfile.zodiacSign || 'Not determined'}
+Languages: ${updatedProfile.languages?.join(', ') || 'English'}`
 
     addMessage({
       id: `user-details-${Date.now()}`,
@@ -1053,23 +1064,20 @@ Date of Birth: ${formattedDOB}`
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden">
-      {/* Star background effect */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {Array.from({ length: 30 }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full bg-white"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              width: `${Math.random() * 2 + 1}px`,
-              height: `${Math.random() * 2 + 1}px`,
-              opacity: Math.random() * 0.6 + 0.2,
-              animation: `twinkle ${Math.random() * 3 + 2}s infinite`,
-            }}
-          />
-        ))}
+    <div className="flex flex-col h-screen relative overflow-hidden">
+      {/* Night Sky Background Image */}
+      <div className="fixed inset-0 z-0">
+        <Image
+          src="/background-night-sky.png"
+          alt="Night Sky Background"
+          fill
+          className="object-cover"
+          priority
+          quality={90}
+          unoptimized
+        />
+        {/* Overlay for better content readability */}
+        <div className="absolute inset-0 bg-black/30"></div>
       </div>
       {/* Header */}
       <motion.header
@@ -1228,7 +1236,7 @@ Date of Birth: ${formattedDOB}`
                     const day = parseInt(selectedDay)
                     const month = parseInt(selectedMonth)
                     const year = parseInt(selectedYear)
-                    
+
                     // Validate date (check for valid day in month, leap years, etc.)
                     const daysInMonth = new Date(year, month, 0).getDate()
                     if (day > daysInMonth) {
@@ -1240,7 +1248,7 @@ Date of Birth: ${formattedDOB}`
                       })
                       return
                     }
-                    
+
                     // Validate year range
                     const currentYear = new Date().getFullYear()
                     if (year < 1900 || year > currentYear) {
@@ -1252,7 +1260,7 @@ Date of Birth: ${formattedDOB}`
                       })
                       return
                     }
-                    
+
                     const formattedDate = `${selectedDay.padStart(2, '0')}-${selectedMonth.padStart(2, '0')}-${selectedYear}`
                     handleDetailsInput(formattedDate)
                     // Reset selections
